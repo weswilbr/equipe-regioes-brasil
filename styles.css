@@ -1,0 +1,72 @@
+/* Estilos customizados essenciais */
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+    border-radius: 0.5rem;
+    z-index: 1;
+}
+
+/* Scrollbar personalizada para o painel lateral */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Animação de loading (spinner) */
+.loader {
+    border-top-color: #4F46E5;
+    -webkit-animation: spinner 1.5s linear infinite;
+    animation: spinner 1.5s linear infinite;
+}
+
+@keyframes spinner {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Efeito de hover nos cards de membro */
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* Container para Relatório (Crucial para html2canvas) */
+.report-container {
+    background: white;
+    padding: 40px;
+    width: 1200px;
+    position: absolute;
+    left: -9999px;
+    top: 0;
+}
+
+/* Estilo para o ícone de mapa personalizado com nome */
+.custom-div-icon {
+    z-index: 1000;
+}
+
+/* Oculta o TileLayer padrão e mostra apenas o GeoJSON com fundo transparente */
+.leaflet-tile-pane {
+    opacity: 0.5; /* Deixa o mapa base mais sutil */
+}
