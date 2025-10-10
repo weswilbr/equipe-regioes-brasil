@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -12,16 +11,10 @@
     <!-- Bibliotecas de Terceiros (CDNs) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Configuração do Tailwind CSS (Permanece no HTML por ser configuração do framework)
         tailwind.config = { darkMode: 'class', theme: { extend: { animation: { 'fade-in': 'fadeIn 0.5s ease-in-out', 'slide-up': 'slideUp 0.3s ease-out' }, keyframes: { fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } }, slideUp: { '0%': { transform: 'translateY(10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } } } } } }
     </script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- NOVO: Adicionando a biblioteca de Clusterização (essencial para o novo initMap) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -33,20 +26,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        /* Estilos customizados essenciais (MANTIDOS aqui) */
         body { font-family: 'Inter', sans-serif; } #map { height: 100%; width: 100%; border-radius: 0.5rem; z-index: 1; background-color: #f9fafb; } .dark #map { background-color: #1f2937; } .custom-scrollbar::-webkit-scrollbar { width: 6px; } .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; } .dark .custom-scrollbar::-webkit-scrollbar-track { background: #374151; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; } .dark .custom-scrollbar::-webkit-scrollbar-thumb { background: #555; } .loader { border-top-color: #4F46E5; animation: spinner 1.5s linear infinite; } @keyframes spinner { to { transform: rotate(360deg); } } .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); } .report-container { position: absolute; left: -9999px; } .custom-div-icon { z-index: 1000; }
         .form-input { @apply block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm; } .form-select { @apply block w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-gray-900 dark:text-white focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm; } .form-checkbox { @apply h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 rounded; } .primary-btn { @apply w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50; } .secondary-btn { @apply px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600; } .danger-btn { @apply px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700; }
     </style>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 antialiased">
 
-    <!-- OVERLAY DE CARREGAMENTO -->
     <div id="loadingOverlay" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex items-center justify-center transition-opacity duration-500">
         <div class="text-center"><div class="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-16 w-16 mb-4 mx-auto"></div><p class="text-gray-600 dark:text-gray-400" data-key="loadingApp">Carregando aplicação...</p></div>
     </div>
 
     <div class="flex flex-col h-screen">
-        <!-- HEADER -->
         <header class="bg-white dark:bg-gray-800 shadow-md z-20">
             <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center">
@@ -71,103 +61,42 @@
             </div>
         </header>
 
-        <!-- MAIN CONTENT AREA -->
         <main class="flex-grow flex flex-col lg:flex-row p-4 gap-4 overflow-hidden">
-            <!-- PAINEL LATERAL -->
             <div class="w-full lg:w-1/3 xl:w-1/4 flex flex-col gap-4 max-h-full overflow-y-auto custom-scrollbar min-h-0">
-                
-                <!-- Navegação e Conteúdo por Aba -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-                    <!-- Tabs -->
                     <div class="flex border-b border-gray-200 dark:border-gray-700">
-                        <button class="tab-btn flex-1 px-4 py-3 text-sm font-medium" data-tab="add"><svg class="w-5 h-5 inline-block -mt-1 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><span data-key="addTab">Adicionar</span></button>
-                        <button class="tab-btn flex-1 px-4 py-3 text-sm font-medium" data-tab="list"><svg class="w-5 h-5 inline-block -mt-1 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg><span data-key="listTab">Lista</span></button>
-                        <button class="tab-btn flex-1 px-4 py-3 text-sm font-medium" data-tab="stats"><svg class="w-5 h-5 inline-block -mt-1 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg><span data-key="statsTab">Estatísticas</span></button>
+                        <button class="tab-btn flex-1 px-4 py-3 text-sm font-medium" data-tab="add"><svg class="w-5 h-5 inline-block -mt-1 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><span data-key="addTab"></span></button>
+                        <button class="tab-btn flex-1 px-4 py-3 text-sm font-medium" data-tab="list"><svg class="w-5 h-5 inline-block -mt-1 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg><span data-key="listTab"></span></button>
+                        <button class="tab-btn flex-1 px-4 py-3 text-sm font-medium" data-tab="stats"><svg class="w-5 h-5 inline-block -mt-1 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg><span data-key="statsTab"></span></button>
                     </div>
                     
-                    <!-- Conteúdo Add -->
-                    <div id="addTab" class="tab-content p-6">
-                        <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white" data-key="addNewMemberTitle">Adicionar Novo Membro</h2>
-                        <form id="addMemberForm" class="space-y-4">
-                            <div><label for="memberName" class="block text-sm font-medium mb-1"><span data-key="nameLabel">Nome do Membro</span><span class="text-red-500">*</span></label><div class="relative"><input type="text" id="memberName" required maxlength="50" class="form-input" data-key-placeholder="namePlaceholder"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span id="nameCharCount" class="text-xs text-gray-400">0/50</span></div></div></div>
-                            <div><label for="memberPhone" class="block text-sm font-medium mb-1" data-key="phoneLabel">Telefone/WhatsApp</label><input type="tel" id="memberPhone" maxlength="20" class="form-input" data-key-placeholder="phonePlaceholder"></div>
-                            <div><label for="memberState" class="block text-sm font-medium mb-1"><span data-key="stateLabel">Estado</span><span class="text-red-500">*</span></label><select id="memberState" required class="form-select"><option value="" data-key="selectStateOption">Selecione um estado</option></select></div>
-                            <div><label for="memberCity" class="block text-sm font-medium mb-1" data-key="cityLabel">Cidade</label><input type="text" id="memberCity" maxlength="50" class="form-input" data-key-placeholder="cityPlaceholder"></div>
-                            <div class="flex items-center"><input id="memberIsLeader" type="checkbox" class="form-checkbox"><label for="memberIsLeader" class="ml-2 block text-sm text-gray-900 dark:text-gray-300" data-key="regionalLeaderLabel">Responsável pela Região</label></div>
-                            <button type="submit" id="addMemberBtn" class="primary-btn"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><span data-key="addMemberButton">Adicionar Membro</span></button>
-                        </form>
-                    </div>
+                    <div id="addTab" class="tab-content p-6"><h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white" data-key="addNewMemberTitle"></h2><form id="addMemberForm" class="space-y-4">
+                        <div><label for="memberName" class="block text-sm font-medium mb-1"><span data-key="nameLabel"></span><span class="text-red-500">*</span></label><div class="relative"><input type="text" id="memberName" required maxlength="50" class="form-input" data-key-placeholder="namePlaceholder"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span id="nameCharCount" class="text-xs text-gray-400">0/50</span></div></div></div>
+                        <div><label for="memberPhone" class="block text-sm font-medium mb-1" data-key="phoneLabel"></label><input type="tel" id="memberPhone" maxlength="20" class="form-input" data-key-placeholder="phonePlaceholder"></div>
+                        <div><label for="memberState" class="block text-sm font-medium mb-1"><span data-key="stateLabel"></span><span class="text-red-500">*</span></label><select id="memberState" required class="form-select"><option value="" data-key="selectStateOption"></option></select></div>
+                        <div><label for="memberCity" class="block text-sm font-medium mb-1" data-key="cityLabel"></label><input type="text" id="memberCity" maxlength="50" class="form-input" data-key-placeholder="cityPlaceholder"></div>
+                        <div class="flex items-center"><input id="memberIsLeader" type="checkbox" class="form-checkbox"><label for="memberIsLeader" class="ml-2 block text-sm text-gray-900 dark:text-gray-300" data-key="regionalLeaderLabel"></label></div>
+                        <button type="submit" class="primary-btn"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><span data-key="addMemberButton"></span></button>
+                    </form></div>
                     
-                    <!-- Conteúdo Lista -->
-                    <div id="listTab" class="tab-content hidden p-6">
-                        <h2 class="text-xl font-bold mb-4" data-key="teamMembersTitle">Membros da Equipe</h2>
-                        <div class="mb-4 relative">
-                            <input type="text" id="searchInput" class="form-input pl-10" data-key-placeholder="searchPlaceholder">
-                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg>
-                            </div>
-                        </div>
-                        <div id="memberList" class="space-y-3"></div>
-                        <p id="emptyMessage" class="text-center py-8 text-gray-500 hidden">
-                            <svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                            <span data-key="emptyMemberList">Nenhum membro adicionado ainda.</span>
-                        </p>
-                    </div>
-                    
-                    <!-- Conteúdo Estatísticas -->
-                    <div id="statsTab" class="tab-content hidden p-6">
-                        <h2 class="text-xl font-bold mb-4" data-key="teamStatsTitle">Estatísticas da Equipe</h2>
-                        <div id="statsContainer" class="space-y-4"></div>
-                    </div>
+                    <div id="listTab" class="tab-content hidden p-6"><h2 class="text-xl font-bold mb-4" data-key="teamMembersTitle"></h2><div class="mb-4 relative"><input type="text" id="searchInput" class="form-input pl-10" data-key-placeholder="searchPlaceholder"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><svg class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" /></svg></div></div><div id="memberList" class="space-y-3"></div><p id="emptyMessage" class="text-center py-8 text-gray-500 hidden"><svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg><span data-key="emptyMemberList"></span></p></div>
+                    <div id="statsTab" class="tab-content hidden p-6"><h2 class="text-xl font-bold mb-4" data-key="teamStatsTitle"></h2><div id="statsContainer" class="space-y-4"></div></div>
                 </div>
                 
-                <!-- Ações de Dados -->
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 space-y-4">
-                    <div>
-                        <h3 class="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300" data-key="teamDataTitle">Dados da Equipe</h3>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button id="importBtn" class="flex items-center justify-center p-2 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded-md">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                                <span data-key="importJsonButton">Importar JSON</span>
-                            </button>
-                            <button id="clearAllBtn" class="flex items-center justify-center p-2 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded-md">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                <span data-key="clearAllButton">Limpar Tudo</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h3 class="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300" data-key="exportListTitle">Exportar Lista de Membros</h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button id="exportJsonBtn" data-key-title="exportJsonTooltip" class="p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
-                                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-                            </button>
-                            <button id="exportPdfBtn" data-key-title="exportPdfTooltip" class="p-2 bg-red-100 dark:bg-red-900 rounded-md">
-                                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            </button>
-                            <button id="exportXlsxBtn" data-key-title="exportXlsxTooltip" class="p-2 bg-green-100 dark:bg-green-900 rounded-md">
-                                <svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg>
-                            </button>
-                        </div>
-                    </div>
+                    <div><h3 class="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300" data-key="teamDataTitle"></h3><div class="grid grid-cols-2 gap-2"><button id="importBtn" class="flex items-center justify-center p-2 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded-md"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg><span data-key="importJsonButton"></span></button><button id="clearAllBtn" class="flex items-center justify-center p-2 bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300 rounded-md"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg><span data-key="clearAllButton"></span></button></div></div>
+                    <div><h3 class="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300" data-key="exportListTitle"></h3><div class="grid grid-cols-3 gap-2"><button id="exportJsonBtn" data-key-title="exportJsonTooltip" class="p-2 bg-gray-100 dark:bg-gray-700 rounded-md"><svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg></button><button id="exportPdfBtn" data-key-title="exportPdfTooltip" class="p-2 bg-red-100 dark:bg-red-900 rounded-md"><svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></button><button id="exportXlsxBtn" data-key-title="exportXlsxTooltip" class="p-2 bg-green-100 dark:bg-green-900 rounded-md"><svg class="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z"></path></svg></button></div></div>
                 </div>
                 
-                <!-- Relatórios Regionais -->
-                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4">
-                    <h3 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300" data-key="regionalReportsTitle">Relatórios por Região (PNG)</h3>
-                    <div class="space-y-2">
-                        <!-- Os onclicks agora chamarão a função global exportRegionReport -->
-                        <button id="reportNorteBtn" class="w-full flex items-center justify-between p-2 rounded-md bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300"><span>🌳 Norte</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
-                        <button id="reportNordesteBtn" class="w-full flex items-center justify-between p-2 rounded-md bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"><span>☀️ Nordeste</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
-                        <button id="reportCentroOesteBtn" class="w-full flex items-center justify-between p-2 rounded-md bg-orange-50 text-orange-700 dark:bg-orange-900 dark:text-orange-300"><span>🌾 Centro-Oeste</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
-                        <button id="reportSudesteBtn" class="w-full flex items-center justify-between p-2 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"><span>🏙️ Sudeste</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
-                        <button id="reportSulBtn" class="w-full flex items-center justify-between p-2 rounded-md bg-purple-50 text-purple-700 dark:bg-purple-900 dark:text-purple-300"><span>❄️ Sul</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
-                    </div>
-                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4"><h3 class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300" data-key="regionalReportsTitle"></h3><div class="space-y-2">
+                    <button onclick="exportRegionReport('Norte')" class="w-full flex items-center justify-between p-2 rounded-md bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300"><span>🌳 Norte</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
+                    <button onclick="exportRegionReport('Nordeste')" class="w-full flex items-center justify-between p-2 rounded-md bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"><span>☀️ Nordeste</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
+                    <button onclick="exportRegionReport('Centro-Oeste')" class="w-full flex items-center justify-between p-2 rounded-md bg-orange-50 text-orange-700 dark:bg-orange-900 dark:text-orange-300"><span>🌾 Centro-Oeste</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
+                    <button onclick="exportRegionReport('Sudeste')" class="w-full flex items-center justify-between p-2 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300"><span>🏙️ Sudeste</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
+                    <button onclick="exportRegionReport('Sul')" class="w-full flex items-center justify-between p-2 rounded-md bg-purple-50 text-purple-700 dark:bg-purple-900 dark:text-purple-300"><span>❄️ Sul</span><svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>
+                </div></div>
             </div>
 
-            <!-- MAPA -->
             <div class="w-full lg:w-2/3 xl:w-3/4 h-full min-h-[400px] bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden relative">
                 <div class="absolute top-4 right-4 z-10 flex flex-col gap-2">
                     <button id="centerMapBtn" class="p-2 bg-white dark:bg-gray-800 rounded-md shadow-md" data-key-title="centerMapTooltip"><svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m0 0l-4-4m4 4l4-4"></path></svg></button>
@@ -179,55 +108,238 @@
         </main>
     </div>
 
-    <!-- MODAL DE CONFIRMAÇÃO -->
-    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden animate-fade-in">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 animate-slide-up" onclick="event.stopPropagation()">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2" data-key="confirmActionTitle">Confirmar Ação</h3>
-            <p id="confirmMessage" class="text-gray-600 dark:text-gray-400 mb-4"></p>
-            <div class="flex justify-end gap-3">
-                <button id="confirmCancel" class="secondary-btn" data-key="cancelButton">Cancelar</button>
-                <button id="confirmOk" class="danger-btn" data-key="confirmButton">Confirmar</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- MODAL DE EDIÇÃO -->
-    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden animate-fade-in">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4 animate-slide-up" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4" data-key="editMemberTitle">Editar Membro</h3>
-            <form id="editMemberForm" class="space-y-4">
-                <input type="hidden" id="editMemberId">
-                <div>
-                    <label for="editMemberName" class="block text-sm font-medium mb-1"><span data-key="nameLabel">Nome do Membro</span><span class="text-red-500">*</span></label>
-                    <input type="text" id="editMemberName" required class="form-input">
-                </div>
-                <div>
-                    <label for="editMemberPhone" class="block text-sm font-medium mb-1" data-key="phoneLabel">Telefone/WhatsApp</label>
-                    <input type="tel" id="editMemberPhone" class="form-input">
-                </div>
-                <!-- NOVO: Campo de líder adicionado para edição -->
-                <div class="flex items-center">
-                    <input id="editMemberIsLeader" type="checkbox" class="form-checkbox">
-                    <label for="editMemberIsLeader" class="ml-2 block text-sm text-gray-900 dark:text-gray-300" data-key="regionalLeaderLabel">Responsável pela Região</label>
-                </div>
-                <div id="editMemberLocationDisplay" class="p-3 bg-gray-100 dark:bg-gray-700 rounded-md text-sm">
-                    <!-- O conteúdo será preenchido via JS -->
-                </div>
-                
-                <div class="flex justify-end gap-3 mt-6">
-                    <button type="button" id="editCancel" class="secondary-btn" data-key="cancelButton">Cancelar</button>
-                    <button type="submit" class="primary-btn" data-key="saveChangesButton">Salvar Alterações</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    <div id="confirmModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden animate-fade-in"><div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full mx-4 animate-slide-up" onclick="event.stopPropagation()"><h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2" data-key="confirmActionTitle"></h3><p id="confirmMessage" class="text-gray-600 dark:text-gray-400 mb-4"></p><div class="flex justify-end gap-3"><button id="confirmCancel" class="secondary-btn" data-key="cancelButton"></button><button id="confirmOk" class="danger-btn" data-key="confirmButton"></button></div></div></div>
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden animate-fade-in"><div class="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4 animate-slide-up" onclick="event.stopPropagation()"><h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-4" data-key="editMemberTitle"></h3><form id="editMemberForm" class="space-y-4"><input type="hidden" id="editMemberId"><div><label for="editMemberName" class="block text-sm font-medium mb-1"><span data-key="nameLabel"></span><span class="text-red-500">*</span></label><input type="text" id="editMemberName" required class="form-input"></div><div><label for="editMemberPhone" class="block text-sm font-medium mb-1" data-key="phoneLabel"></label><input type="tel" id="editMemberPhone" class="form-input"></div><div id="editMemberLocationDisplay" class="p-3 bg-gray-100 dark:bg-gray-700 rounded-md text-sm"></div><div class="flex items-center"><input id="editMemberIsLeader" type="checkbox" class="form-checkbox"><label for="editMemberIsLeader" class="ml-2 block text-sm text-gray-900 dark:text-gray-300" data-key="regionalLeaderLabel"></label></div><div class="flex justify-end gap-3 mt-6"><button type="button" id="editCancel" class="secondary-btn" data-key="cancelButton"></button><button type="submit" class="primary-btn" data-key="saveChangesButton"></button></div></form></div></div>
 
-    <!-- CONTAINER SECRETO PARA RELATÓRIOS -->
     <div id="reportContainer" class="report-container"></div>
     <input type="file" id="jsonFileInput" accept=".json" class="hidden">
 
-    <!-- PONTO DE ENTRADA DO JAVASCRIPT MODULARIZADO -->
-    <script type="module" src="./src/main.js"></script>
+    <script>
+    // ========================
+    // I18N - Configurações de Idioma
+    // ========================
+    const translations = {
+        pt: { appTitle: "Plataforma da Equipe", appDescription: "Plataforma interativa para visualização e gerenciamento de membros da equipe.", loadingApp: "Carregando aplicação...", headerTitle: "Plataforma da Equipe", headerSubtitle: "Localize membros em todo o Brasil", membersCountLabel: "membros", addTab: "Adicionar", listTab: "Lista", statsTab: "Estatísticas", addNewMemberTitle: "Adicionar Novo Membro", nameLabel: "Nome do Membro", namePlaceholder: "Ex: João da Silva", phoneLabel: "Telefone/WhatsApp", phonePlaceholder: "Ex: (99) 99999-9999", stateLabel: "Estado", selectStateOption: "Selecione um estado", cityLabel: "Cidade", cityPlaceholder: "Ex: São Paulo", regionalLeaderLabel: "Responsável pela Região", addMemberButton: "Adicionar Membro", teamMembersTitle: "Membros da Equipe", searchPlaceholder: "Buscar membro...", emptyMemberList: "Nenhum membro adicionado ainda.", teamStatsTitle: "Estatísticas da Equipe", teamDataTitle: "Dados da Equipe", importJsonButton: "Importar JSON", clearAllButton: "Limpar Tudo", exportListTitle: "Exportar Lista de Membros", regionalReportsTitle: "Relatórios por Região (PNG)", confirmActionTitle: "Confirmar Ação", cancelButton: "Cancelar", confirmButton: "Confirmar", editMemberTitle: "Editar Membro", saveChangesButton: "Salvar Alterações", locationLabel: "Localização", locationNotEditable: "(não editável)", regionalLeaderBadge: "Responsável Regional", regionLabel: "Região", editButton: "Editar", removeButton: "Remover", mapTypeStreet: "Ruas", mapTypeSatellite: "Satélite", mapTypeTerrain: "Terreno", toggleDarkModeTooltip: "Alternar modo escuro", exportJsonTooltip: "Exportar para JSON", exportPdfTooltip: "Exportar para PDF", exportXlsxTooltip: "Exportar para Excel", centerMapTooltip: "Centralizar Mapa", fullscreenTooltip: "Tela Cheia", mapTypeTooltip: "Alterar Tipo de Mapa", notificationMemberAdded: "{name} adicionado com sucesso!", notificationMemberUpdated: "Membro \"{name}\" atualizado!", notificationMemberRemoved: "Membro removido com sucesso!", notificationAllMembersRemoved: "Todos os membros foram removidos!", notificationDataExported: "Dados exportados para {format}!", notificationDataImported: "{count} membros importados com sucesso!", notificationImportError: "Erro na importação: {error}", notificationMapCentered: "Mapa centralizado no Brasil", notificationMapTypeChanged: "Tipo de mapa alterado para: {type}", notificationFullscreen: "Modo Tela Cheia {status}", statusOn: "ativado", statusOff: "desativado", notificationNoDataToExport: "Não há dados para exportar", notificationRegionHasLeader: "A região {region} já possui um responsável ({leaderName}).", notificationNoMembersInRegion: "Não há membros na região {regionName}", notificationGeneratingReport: "Gerando relatório da região {regionName}...", notificationReportExported: "Relatório da região {regionName} exportado!", notificationErrorReport: "Erro ao gerar relatório.", confirmDelete: "Tem certeza que deseja remover o membro \"{memberName}\"?", confirmClearAll: "Você tem certeza que deseja remover TODOS os membros? Esta ação é irreversível.", confirmImport: "Isso substituirá os dados atuais por {count} novos membros. Deseja continuar?", reportTitle: "Relatório - Região", reportGeneratedOn: "Relatório Gerado em", reportTotalMembers: "Total de Membros", reportActiveStates: "Estados Ativos", reportDistributionByState: "Distribuição por Estado", reportMemberList: "Lista de Membros" },
+        en: { appTitle: "Team Platform", appDescription: "Interactive platform for viewing and managing team members.", loadingApp: "Loading application...", headerTitle: "Team Platform", headerSubtitle: "Locate team members across Brazil", membersCountLabel: "members", addTab: "Add", listTab: "List", statsTab: "Statistics", addNewMemberTitle: "Add New Member", nameLabel: "Member's Name", namePlaceholder: "E.g., John Doe", phoneLabel: "Phone/WhatsApp", phonePlaceholder: "E.g., (555) 555-5555", stateLabel: "State", selectStateOption: "Select a state", cityLabel: "City", cityPlaceholder: "E.g., New York", regionalLeaderLabel: "Regional Leader", addMemberButton: "Add Member", teamMembersTitle: "Team Members", searchPlaceholder: "Search member...", emptyMemberList: "No members added yet.", teamStatsTitle: "Team Statistics", teamDataTitle: "Team Data", importJsonButton: "Import JSON", clearAllButton: "Clear All", exportListTitle: "Export Member List", regionalReportsTitle: "Regional Reports (PNG)", confirmActionTitle: "Confirm Action", cancelButton: "Cancel", confirmButton: "Confirm", editMemberTitle: "Edit Member", saveChangesButton: "Save Changes", locationLabel: "Location", locationNotEditable: "(not editable)", regionalLeaderBadge: "Regional Leader", regionLabel: "Region", editButton: "Edit", removeButton: "Remove", mapTypeStreet: "Streets", mapTypeSatellite: "Satellite", mapTypeTerrain: "Terrain", toggleDarkModeTooltip: "Toggle dark mode", exportJsonTooltip: "Export to JSON", exportPdfTooltip: "Export to PDF", exportXlsxTooltip: "Export to Excel", centerMapTooltip: "Center Map", fullscreenTooltip: "Fullscreen", mapTypeTooltip: "Change Map Type", notificationMemberAdded: "{name} added successfully!", notificationMemberUpdated: "Member \"{name}\" updated!", notificationMemberRemoved: "Member removed successfully!", notificationAllMembersRemoved: "All members have been removed!", notificationDataExported: "Data exported to {format}!", notificationDataImported: "{count} members imported successfully!", notificationImportError: "Import error: {error}", notificationMapCentered: "Map centered on Brazil", notificationMapTypeChanged: "Map type changed to: {type}", notificationFullscreen: "Fullscreen mode {status}", statusOn: "enabled", statusOff: "disabled", notificationNoDataToExport: "No data to export", notificationRegionHasLeader: "The {region} region already has a leader ({leaderName}).", notificationNoMembersInRegion: "No members in the {regionName} region", notificationGeneratingReport: "Generating report for {regionName} region...", notificationReportExported: "Report for {regionName} region exported!", notificationErrorReport: "Error generating report.", confirmDelete: "Are you sure you want to remove the member \"{memberName}\"?", confirmClearAll: "Are you sure you want to remove ALL members? This action is irreversible.", confirmImport: "This will replace current data with {count} new members. Do you want to continue?", reportTitle: "Report - Region", reportGeneratedOn: "Report Generated on", reportTotalMembers: "Total Members", reportActiveStates: "Active States", reportDistributionByState: "Distribution by State", reportMemberList: "Member List" },
+        es: { appTitle: "Plataforma del Equipo", appDescription: "Plataforma interactiva para ver y gestionar miembros del equipo.", loadingApp: "Cargando aplicación...", headerTitle: "Plataforma del Equipo", headerSubtitle: "Localice miembros en todo Brasil", membersCountLabel: "miembros", addTab: "Añadir", listTab: "Lista", statsTab: "Estadísticas", addNewMemberTitle: "Añadir Nuevo Miembro", nameLabel: "Nombre del Miembro", namePlaceholder: "Ej: Juan Pérez", phoneLabel: "Teléfono/WhatsApp", phonePlaceholder: "Ej: (55) 5555-5555", stateLabel: "Estado", selectStateOption: "Seleccione un estado", cityLabel: "Ciudad", cityPlaceholder: "Ej: Madrid", regionalLeaderLabel: "Responsable de la Región", addMemberButton: "Añadir Miembro", teamMembersTitle: "Miembros del Equipo", searchPlaceholder: "Buscar miembro...", emptyMemberList: "Aún no se han añadido miembros.", teamStatsTitle: "Estadísticas del Equipo", teamDataTitle: "Datos del Equipo", importJsonButton: "Importar JSON", clearAllButton: "Limpiar Todo", exportListTitle: "Exportar Lista de Miembros", regionalReportsTitle: "Informes por Región (PNG)", confirmActionTitle: "Confirmar Acción", cancelButton: "Cancelar", confirmButton: "Confirmar", editMemberTitle: "Editar Miembro", saveChangesButton: "Guardar Cambios", locationLabel: "Ubicación", locationNotEditable: "(no editable)", regionalLeaderBadge: "Responsable Regional", regionLabel: "Región", editButton: "Editar", removeButton: "Eliminar", mapTypeStreet: "Calles", mapTypeSatellite: "Satélite", mapTypeTerrain: "Terreno", toggleDarkModeTooltip: "Alternar modo oscuro", exportJsonTooltip: "Exportar a JSON", exportPdfTooltip: "Exportar a PDF", exportXlsxTooltip: "Exportar a Excel", centerMapTooltip: "Centrar Mapa", fullscreenTooltip: "Pantalla Completa", mapTypeTooltip: "Cambiar Tipo de Mapa", notificationMemberAdded: "¡{name} añadido con éxito!", notificationMemberUpdated: "¡Miembro \"{name}\" actualizado!", notificationMemberRemoved: "¡Miembro eliminado con éxito!", notificationAllMembersRemoved: "¡Todos los miembros han sido eliminados!", notificationDataExported: "¡Datos exportados a {format}!", notificationDataImported: "¡{count} miembros importados con éxito!", notificationImportError: "Error de importación: {error}", notificationMapCentered: "Mapa centrado en Brasil", notificationMapTypeChanged: "Tipo de mapa cambiado a: {type}", notificationFullscreen: "Modo de pantalla completa {status}", statusOn: "activado", statusOff: "desactivado", notificationNoDataToExport: "No hay datos para exportar", notificationRegionHasLeader: "La región {region} ya tiene un responsable ({leaderName}).", notificationNoMembersInRegion: "No hay miembros en la región {regionName}", notificationGeneratingReport: "Generando informe para la región {regionName}...", notificationReportExported: "¡Informe de la región {regionName} exportado!", notificationErrorReport: "Error al generar el informe.", confirmDelete: "¿Está seguro de que desea eliminar al miembro \"{memberName}\"?", confirmClearAll: "¿Está seguro de que desea eliminar a TODOS los miembros? Esta acción es irreversible.", confirmImport: "Esto reemplazará los datos actuales con {count} nuevos miembros. ¿Desea continuar?", reportTitle: "Informe - Región", reportGeneratedOn: "Informe Generado el", reportTotalMembers: "Total de Miembros", reportActiveStates: "Estados Activos", reportDistributionByState: "Distribución por Estado", reportMemberList: "Lista de Miembros" }
+    };
+    let currentLanguage = 'pt';
 
+    function getTranslatedString(key, replacements = {}) { let text = translations[currentLanguage]?.[key] || translations.pt[key] || `[${key}]`; for (const placeholder in replacements) { text = text.replace(`{${placeholder}}`, replacements[placeholder]); } return text; }
+    function setLanguage(lang) { currentLanguage = translations[lang] ? lang : 'pt'; localStorage.setItem('userLanguage', currentLanguage); document.documentElement.lang = currentLanguage; document.getElementById('languageSelector').value = currentLanguage; document.querySelectorAll('[data-key]').forEach(el => { el.textContent = getTranslatedString(el.dataset.key); }); document.querySelectorAll('[data-key-placeholder]').forEach(el => { el.placeholder = getTranslatedString(el.dataset.keyPlaceholder); }); document.querySelectorAll('[data-key-title]').forEach(el => { el.title = getTranslatedString(el.dataset.keyTitle); }); updateAllMarkersOnMap(); updateAllUI(); populateStatesDropdown(); }
+
+    // ========================
+    // Configurações e Estado Globais
+    // ========================
+    let map, markerLayerGroup; let members = []; const markers = {}; let currentMapType = 'street'; let isFullscreen = false; let confirmCallback = null; const localStorageKey = 'plataformaEquipe_v3'; const DISTRIBUTION_RADIUS = 0.8;
+    const brazilStates = { 'AC': { name: 'Acre', lat: -9.0238, lon: -70.812, region: 'Norte' }, 'AL': { name: 'Alagoas', lat: -9.5713, lon: -36.782, region: 'Nordeste' }, 'AP': { name: 'Amapá', lat: 1.4132, lon: -51.7661, region: 'Norte' }, 'AM': { name: 'Amazonas', lat: -3.4168, lon: -65.8561, region: 'Norte' }, 'BA': { name: 'Bahia', lat: -12.9714, lon: -38.5014, region: 'Nordeste' }, 'CE': { name: 'Ceará', lat: -3.7172, lon: -38.5431, region: 'Nordeste' }, 'DF': { name: 'Distrito Federal', lat: -15.7797, lon: -47.9297, region: 'Centro-Oeste' }, 'ES': { name: 'Espírito Santo', lat: -20.3155, lon: -40.3128, region: 'Sudeste' }, 'GO': { name: 'Goiás', lat: -16.6869, lon: -49.2648, region: 'Centro-Oeste' }, 'MA': { name: 'Maranhão', lat: -2.5387, lon: -44.2827, region: 'Nordeste' }, 'MT': { name: 'Mato Grosso', lat: -15.601, lon: -56.0979, region: 'Centro-Oeste' }, 'MS': { name: 'Mato Grosso do Sul', lat: -20.4697, lon: -54.6201, region: 'Centro-Oeste' }, 'MG': { name: 'Minas Gerais', lat: -19.9167, lon: -43.9345, region: 'Sudeste' }, 'PA': { name: 'Pará', lat: -1.4558, lon: -48.5039, region: 'Norte' }, 'PB': { name: 'Paraíba', lat: -7.1195, lon: -34.8451, region: 'Nordeste' }, 'PR': { name: 'Paraná', lat: -25.4284, lon: -49.2733, region: 'Sul' }, 'PE': { name: 'Pernambuco', lat: -8.0476, lon: -34.8771, region: 'Nordeste' }, 'PI': { name: 'Piauí', lat: -5.0919, lon: -42.8038, region: 'Nordeste' }, 'RJ': { name: 'Rio de Janeiro', lat: -22.9068, lon: -43.1729, region: 'Sudeste' }, 'RN': { name: 'Rio Grande do Norte', lat: -5.7945, lon: -35.211, region: 'Nordeste' }, 'RS': { name: 'Rio Grande do Sul', lat: -30.0346, lon: -51.2177, region: 'Sul' }, 'RO': { name: 'Rondônia', lat: -8.7619, lon: -63.9039, region: 'Norte' }, 'RR': { name: 'Roraima', lat: 2.8235, lon: -60.6758, region: 'Norte' }, 'SC': { name: 'Santa Catarina', lat: -27.5954, lon: -48.5482, region: 'Sul' }, 'SP': { name: 'São Paulo', lat: -23.5505, lon: -46.6333, region: 'Sudeste' }, 'SE': { name: 'Sergipe', lat: -10.9472, lon: -37.0731, region: 'Nordeste' }, 'TO': { name: 'Tocantins', lat: -10.1689, lon: -48.3317, region: 'Norte' }};
+    const mapTiles = { street: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png' };
+    const regionColors = { 'Norte': { bg: '#10b981', text: '#065f46' }, 'Nordeste': { bg: '#f59e0b', text: '#92400e' }, 'Centro-Oeste': { bg: '#f97316', text: '#9a3412' }, 'Sudeste': { bg: '#3b82f6', text: '#1e3a8a' }, 'Sul': { bg: '#8b5cf6', text: '#5b21b6' } };
+
+    function showNotification(message, type = 'success') { const bg = { success: 'linear-gradient(to right, #10b981, #059669)', error: 'linear-gradient(to right, #ef4444, #dc2626)', warning: 'linear-gradient(to right, #f59e0b, #d97706)', info: 'linear-gradient(to right, #3b82f6, #2563eb)' }; Toastify({ text: message, duration: 3000, gravity: "top", position: "right", style: { background: bg[type] || bg.info }, stopOnFocus: true }).showToast(); }
+    function showConfirmModal(message, callback) { document.getElementById('confirmMessage').textContent = message; document.getElementById('confirmModal').classList.remove('hidden'); confirmCallback = callback; }
+    function hideConfirmModal() { document.getElementById('confirmModal').classList.add('hidden'); confirmCallback = null; }
+    function hideEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+    function saveToLocalStorage() { localStorage.setItem(localStorageKey, JSON.stringify(members)); }
+    function loadFromLocalStorage() { const data = localStorage.getItem(localStorageKey); if (data) { members = JSON.parse(data); updateAllMarkersOnMap(); updateAllUI(); } }
+    
+    function initMap() { map = L.map('map').setView([-15.7797, -47.9297], 5); L.tileLayer(mapTiles.street, { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map); markerLayerGroup = L.layerGroup().addTo(map); }
+    
+    function updateAllMarkersOnMap() {
+        markerLayerGroup.clearLayers();
+        Object.keys(markers).forEach(key => delete markers[key]);
+        const membersByState = members.reduce((acc, member) => { (acc[member.state] = acc[member.state] || []).push(member); return acc; }, {});
+        for (const stateCode in membersByState) {
+            const stateMembers = membersByState[stateCode]; const stateData = brazilStates[stateCode]; const totalInState = stateMembers.length;
+            stateMembers.forEach((member, index) => {
+                let lat, lon;
+                if (totalInState > 1) { const angle = (360 / totalInState) * index; const radians = angle * (Math.PI / 180); lat = stateData.lat + DISTRIBUTION_RADIUS * Math.cos(radians); lon = stateData.lon + DISTRIBUTION_RADIUS * Math.sin(radians); } else { lat = stateData.lat; lon = stateData.lon; }
+                addMarkerToMap(member, lat, lon);
+            });
+        }
+    }
+
+    function addMarkerToMap(member, lat, lon) {
+        const state = brazilStates[member.state];
+        const icon = createCustomIcon(member.name, state.region, member.isLeader);
+        const marker = L.marker([lat, lon], { icon, zIndexOffset: member.isLeader ? 1000 : 0 });
+        const leaderBadge = member.isLeader ? `<p class="text-sm font-bold text-yellow-500">⭐ ${getTranslatedString('regionalLeaderBadge')}</p>` : '';
+        const phone = member.phone ? `<p class="text-sm">📱 ${member.phone}</p>` : '';
+        const popupContent = `<div class="p-1"><h3 class="font-bold text-lg">${member.name}</h3>${leaderBadge}${phone}<p class="text-sm">📍 ${member.city || state.name}, ${member.state}</p><div class="mt-2 flex gap-2"><button onclick="requestEditMemberFromMap('${member.id}')" class="flex-1 bg-indigo-600 text-white text-sm py-1 px-2 rounded">${getTranslatedString('editButton')}</button><button onclick="deleteMemberFromPopup('${member.id}')" class="flex-1 bg-red-600 text-white text-sm py-1 px-2 rounded">${getTranslatedString('removeButton')}</button></div></div>`;
+        marker.bindPopup(popupContent);
+        markerLayerGroup.addLayer(marker); markers[member.id] = marker;
+    }
+
+    function createCustomIcon(memberName, region, isLeader = false) {
+        const color = regionColors[region]?.bg || '#4F46E5';
+        const iconSvg = isLeader ? `<svg width="32" height="32" viewBox="0 0 24 24" fill="${color}" stroke="#fff" stroke-width="1.5" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>` : `<svg width="24" height="24" viewBox="0 0 24 24" fill="${color}" stroke="#fff" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S11.12 7 12 7s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
+        const html = `<div style="text-align:center;white-space:nowrap;display:flex;flex-direction:column;align-items:center;"><div style="background-color:${color};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.3);margin-bottom:2px;">${memberName}</div>${iconSvg}</div>`;
+        return L.divIcon({ className: 'custom-div-icon', html, iconSize: [120, isLeader ? 48 : 40], iconAnchor: [60, isLeader ? 46 : 38] });
+    }
+
+    function addMember(data) {
+        if (data.isLeader) { const state = brazilStates[data.state], region = state.region; const leader = members.find(m => brazilStates[m.state]?.region === region && m.isLeader); if (leader) { showNotification(getTranslatedString('notificationRegionHasLeader', { region, leaderName: leader.name }), 'warning'); return; } }
+        const newMember = { id: Date.now().toString(), createdAt: new Date().toISOString(), ...data };
+        members.push(newMember); saveToLocalStorage(); updateAllMarkersOnMap(); updateAllUI();
+        showNotification(getTranslatedString('notificationMemberAdded', { name: data.name }), 'success');
+        document.getElementById('addMemberForm').reset(); document.getElementById('nameCharCount').textContent = '0/50';
+    }
+    
+    function updateMemberDetails(id, details) {
+        const index = members.findIndex(m => m.id === id); if (index === -1) return;
+        const member = { ...members[index], ...details };
+        if (member.isLeader) { const state = brazilStates[member.state], region = state.region; const leader = members.find(m => m.id !== id && brazilStates[m.state]?.region === region && m.isLeader); if (leader) { showNotification(getTranslatedString('notificationRegionHasLeader', { region, leaderName: leader.name }), 'warning'); return; } }
+        members[index] = member; saveToLocalStorage(); updateAllMarkersOnMap(); updateAllUI();
+        showNotification(getTranslatedString('notificationMemberUpdated', { name: details.name }), 'success');
+        hideEditModal();
+    }
+    
+    function deleteMember(id) { members = members.filter(m => m.id !== id); saveToLocalStorage(); updateAllMarkersOnMap(); updateAllUI(); showNotification(getTranslatedString('notificationMemberRemoved'), 'success'); }
+    function clearAllMembers() { showConfirmModal(getTranslatedString('confirmClearAll'), () => { members = []; saveToLocalStorage(); updateAllMarkersOnMap(); updateAllUI(); showNotification(getTranslatedString('notificationAllMembersRemoved'), 'success'); hideConfirmModal(); }); }
+
+    function updateAllUI() { updateMemberList(); updateStats(); updateMemberCount(); }
+    function updateMemberCount() { document.getElementById('memberCount').textContent = members.length; }
+
+    function updateMemberList() {
+        const container = document.getElementById('memberList'), emptyMsg = document.getElementById('emptyMessage');
+        const term = document.getElementById('searchInput').value.toLowerCase();
+        const filtered = members.filter(m => m.name.toLowerCase().includes(term) || m.state.toLowerCase().includes(term) || (m.city||'').toLowerCase().includes(term) || (m.phone||'').includes(term)).sort((a,b) => a.name.localeCompare(b.name));
+        container.innerHTML = '';
+        if (filtered.length === 0) { emptyMsg.classList.remove('hidden'); return; }
+        emptyMsg.classList.add('hidden');
+        filtered.forEach(m => {
+            const state = brazilStates[m.state];
+            const leaderBadge = m.isLeader ? `<span class="text-xs font-bold text-yellow-500 dark:text-yellow-400">⭐ ${getTranslatedString('regionalLeaderBadge')}</span>` : '';
+            const card = document.createElement('div');
+            card.className = `bg-gray-50 dark:bg-gray-700 rounded-lg p-4 card-hover transition-all ${m.isLeader ? 'border-2 border-yellow-400' : ''}`;
+            card.innerHTML = `<div class="flex justify-between items-start"><div class="flex-1"><h4 class="font-semibold text-gray-900 dark:text-white">${m.name}</h4>${leaderBadge}<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">📱 ${m.phone||'-'}</p><p class="text-sm text-gray-600 dark:text-gray-400 mt-1">📍 ${m.city||state.name}, ${m.state}</p></div><div class="flex gap-1"><button onclick="showEditMemberModal('${m.id}')" class="p-2 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-gray-600 rounded-md"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-3L20.8 7.2a2.121 2.121 0 000-3l-3-3a2.121 2.121 0 00-3 0L7 11v4h4z"></path></svg></button><button onclick="deleteMemberFromPopup('${m.id}')" class="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-gray-600 rounded-md"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>`;
+            container.appendChild(card);
+        });
+    }
+
+    function updateStats() {
+        const container = document.getElementById('statsContainer');
+        if (members.length === 0) { container.innerHTML = `<div class="text-center py-8 text-gray-500"><svg class="w-12 h-12 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg><p>${getTranslatedString('emptyMemberList')}</p></div>`; return; }
+        const byRegion = members.reduce((acc, m) => { const r = brazilStates[m.state]?.region; if(r) acc[r] = (acc[r] || 0) + 1; return acc; }, {});
+        const sorted = Object.entries(byRegion).sort((a,b) => b[1]-a[1]);
+        container.innerHTML = `<div class="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg p-4 text-white"><p class="text-sm">${getTranslatedString('reportTotalMembers')}</p><p class="text-3xl font-bold">${members.length}</p></div>` + sorted.map(([r,c]) => { const p = (c/members.length*100).toFixed(1); return `<div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-md"><div class="flex justify-between text-sm mb-1"><span class="text-gray-600 dark:text-gray-400">${r}</span><span class="font-semibold text-gray-900 dark:text-white">${c} (${p}%)</span></div><div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2"><div class="h-2 rounded-full" style="width:${p}%;background-color:${regionColors[r].bg};"></div></div></div>`; }).join('');
+    }
+    
+    function populateStatesDropdown() { const select = document.getElementById('memberState'); select.innerHTML = `<option value="">${getTranslatedString('selectStateOption')}</option>`; Object.entries(brazilStates).sort((a,b) => a[1].name.localeCompare(b[1].name)).forEach(([c,d]) => { const o = document.createElement('option'); o.value = c; o.textContent = `${d.name} (${c})`; select.appendChild(o); }); }
+    
+    window.deleteMemberFromPopup = id => { const m = members.find(m => m.id === id); if(m) showConfirmModal(getTranslatedString('confirmDelete', { memberName: m.name }), () => { deleteMember(id); map.closePopup(); }); };
+    window.requestEditMemberFromMap = id => { map.closePopup(); showEditMemberModal(id); };
+
+    function showEditMemberModal(id) {
+        const m = members.find(m => m.id === id); if (!m) return;
+        const s = brazilStates[m.state];
+        document.getElementById('editMemberId').value = m.id; document.getElementById('editMemberName').value = m.name; document.getElementById('editMemberPhone').value = m.phone || ''; document.getElementById('editMemberIsLeader').checked = m.isLeader || false;
+        document.getElementById('editMemberLocationDisplay').innerHTML = `<strong>${getTranslatedString('locationLabel')}:</strong> ${m.city||s.name}, ${m.state} <i>${getTranslatedString('locationNotEditable')}</i>`;
+        document.getElementById('editModal').classList.remove('hidden');
+    }
+    
+    function exportDataAs(format) {
+        if (members.length === 0) { showNotification(getTranslatedString('notificationNoDataToExport'), 'warning'); return; }
+        const filename = `equipe-data-${new Date().toISOString().split('T')[0]}`;
+        if (format === 'json') { const blob = new Blob([JSON.stringify(members, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `${filename}.json`; a.click(); URL.revokeObjectURL(url); }
+        else if (format === 'pdf') { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.autoTable({ head: [[getTranslatedString('nameLabel'), getTranslatedString('phoneLabel'), getTranslatedString('cityLabel'), getTranslatedString('stateLabel'), getTranslatedString('regionLabel'), getTranslatedString('regionalLeaderLabel')]], body: members.map(m => { const s = brazilStates[m.state]; return [m.name, m.phone||'-', m.city||s.name, s.name, s.region, m.isLeader ? 'Sim/Yes' : 'Não/No']; }) }); doc.save(`${filename}.pdf`); }
+        else if (format === 'xlsx') { const data = members.map(m => { const s = brazilStates[m.state]; return { [getTranslatedString('nameLabel')]: m.name, [getTranslatedString('phoneLabel')]: m.phone||'', [getTranslatedString('cityLabel')]: m.city||s.name, [getTranslatedString('stateLabel')]: s.name, [getTranslatedString('regionLabel')]: s.region, [getTranslatedString('regionalLeaderLabel')]: m.isLeader ? 'Sim/Yes' : 'Não/No' }; }); const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Membros"); XLSX.writeFile(wb, `${filename}.xlsx`); }
+        showNotification(getTranslatedString('notificationDataExported', { format: format.toUpperCase() }), 'success');
+    }
+
+    function centerMap() { map.setView([-15.7797, -47.9297], 5); showNotification(getTranslatedString('notificationMapCentered'), 'info'); }
+    function toggleMapType() { const types = Object.keys(mapTiles); currentMapType = types[(types.indexOf(currentMapType) + 1) % types.length]; map.eachLayer(l => l instanceof L.TileLayer && map.removeLayer(l)); L.tileLayer(mapTiles[currentMapType], { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map); showNotification(getTranslatedString('notificationMapTypeChanged', { type: getTranslatedString(`mapType${currentMapType.charAt(0).toUpperCase() + currentMapType.slice(1)}`) }), 'info'); }
+    function toggleFullscreen() { const el = document.getElementById('map').parentElement; if (!document.fullscreenElement) { el.requestFullscreen(); isFullscreen = true; } else { document.exitFullscreen(); isFullscreen = false; } showNotification(getTranslatedString('notificationFullscreen', { status: getTranslatedString(isFullscreen ? 'statusOn' : 'statusOff') }), 'info'); }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const userLang = localStorage.getItem('userLanguage') || navigator.language.split('-')[0];
+        initMap(); loadFromLocalStorage(); switchTab('add');
+        
+        document.getElementById('languageSelector').addEventListener('change', (e) => setLanguage(e.target.value));
+        document.getElementById('darkModeToggle').addEventListener('click', () => { document.documentElement.classList.toggle('dark'); localStorage.setItem('darkMode', document.documentElement.classList.contains('dark')); });
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
+        document.getElementById('searchInput').addEventListener('input', updateMemberList);
+        document.getElementById('memberName').addEventListener('input', (e) => { document.getElementById('nameCharCount').textContent = `${e.target.value.length}/50`; });
+        
+        document.getElementById('addMemberForm').addEventListener('submit', function(e) { e.preventDefault(); addMember({ name: this.memberName.value.trim(), phone: this.memberPhone.value.trim(), state: this.memberState.value, city: this.memberCity.value.trim(), isLeader: this.memberIsLeader.checked }); });
+        document.getElementById('editMemberForm').addEventListener('submit', function(e) { e.preventDefault(); updateMemberDetails(this.editMemberId.value, { name: this.editMemberName.value.trim(), phone: this.editMemberPhone.value.trim(), isLeader: this.editMemberIsLeader.checked }); });
+        
+        document.getElementById('importBtn').addEventListener('click', () => document.getElementById('jsonFileInput').click());
+        document.getElementById('jsonFileInput').addEventListener('change', e => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = evt => { try { const data = JSON.parse(evt.target.result); if (!Array.isArray(data)) throw new Error('Invalid format'); showConfirmModal(getTranslatedString('confirmImport', {count: data.length}), () => { members = data; saveToLocalStorage(); updateAllMarkersOnMap(); updateAllUI(); showNotification(getTranslatedString('notificationDataImported', {count: data.length}), 'success'); }); } catch(err) { showNotification(getTranslatedString('notificationImportError', {error: err.message}), 'error'); }}; reader.readAsText(file); e.target.value = null; });
+        document.getElementById('clearAllBtn').addEventListener('click', clearAllMembers);
+        
+        document.getElementById('exportJsonBtn').addEventListener('click', () => exportDataAs('json'));
+        document.getElementById('exportPdfBtn').addEventListener('click', () => exportDataAs('pdf'));
+        document.getElementById('exportXlsxBtn').addEventListener('click', () => exportDataAs('xlsx'));
+        
+        document.getElementById('centerMapBtn').addEventListener('click', centerMap);
+        document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+        document.getElementById('mapTypeBtn').addEventListener('click', toggleMapType);
+        document.addEventListener('fullscreenchange', () => { isFullscreen = !!document.fullscreenElement; setTimeout(() => map.invalidateSize(), 100); });
+        
+        document.getElementById('confirmOk').addEventListener('click', (e) => { e.stopPropagation(); if (confirmCallback) confirmCallback(); hideConfirmModal(); });
+        document.getElementById('confirmCancel').addEventListener('click', (e) => { e.stopPropagation(); hideConfirmModal(); });
+        document.getElementById('editCancel').addEventListener('click', (e) => { e.stopPropagation(); hideEditModal(); });
+
+        if (localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark');
+        setLanguage(userLang);
+
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        loadingOverlay.style.opacity = '0';
+        setTimeout(() => loadingOverlay.style.display = 'none', 500);
+    });
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const isSelected = btn.dataset.tab === tabName;
+            btn.classList.toggle('text-indigo-600', isSelected); btn.classList.toggle('dark:text-indigo-400', isSelected); btn.classList.toggle('bg-indigo-50', isSelected); btn.classList.toggle('dark:bg-gray-700', isSelected); btn.classList.toggle('border-b-2', isSelected); btn.classList.toggle('border-indigo-600', isSelected); btn.classList.toggle('text-gray-600', !isSelected); btn.classList.toggle('dark:text-gray-400', !isSelected);
+        });
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById(tabName + 'Tab').classList.remove('hidden');
+    }
+    
+    async function exportRegionReport(regionName) {
+        const regionMembers = members.filter(m => brazilStates[m.state]?.region === regionName);
+        if (regionMembers.length === 0) { showNotification(getTranslatedString('notificationNoMembersInRegion', { regionName }), 'warning'); return; }
+        showNotification(getTranslatedString('notificationGeneratingReport', { regionName }), 'info');
+        const reportHTML = generateRegionReportHTML(regionName, regionMembers);
+        const container = document.getElementById('reportContainer'); container.innerHTML = reportHTML;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+            const canvas = await html2canvas(container, { backgroundColor: '#ffffff', scale: 2, width: 1200, windowWidth: 1200 });
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob); const link = document.createElement('a');
+                link.href = url; link.download = `relatorio-${regionName.toLowerCase()}-${new Date().toISOString().split('T')[0]}.png`;
+                link.click(); URL.revokeObjectURL(url);
+                showNotification(getTranslatedString('notificationReportExported', { regionName }), 'success');
+            }, 'image/png');
+        } catch (error) { showNotification(getTranslatedString('notificationErrorReport'), 'error'); }
+        finally { container.innerHTML = ''; }
+    }
+    function generateRegionReportHTML(regionName, regionMembers) {
+        const color = regionColors[regionName]; const byState = {};
+        regionMembers.forEach(m => byState[m.state] = (byState[m.state] || 0) + 1);
+        const sortedStates = Object.entries(byState).sort((a, b) => b[1] - a[1]);
+        const date = new Date().toLocaleDateString(currentLanguage);
+        return `<div style="font-family:'Inter',sans-serif;padding:40px;background:white;width:1200px;box-sizing:border-box;">
+            <h1 style="color:${color.text};font-size:36px;font-weight:800;text-align:center;">${getTranslatedString('reportTitle')} ${regionName}</h1>
+            <p style="text-align:center;color:#6b7280;margin-bottom:30px;">${getTranslatedString('reportGeneratedOn')} ${date}</p>
+            <div style="display:flex;gap:30px;margin-bottom:30px;text-align:center;">
+                <div style="flex:1;background:#f3f4f6;padding:20px;border-radius:8px;">
+                    <p style="font-size:16px;color:#4b5563;">${getTranslatedString('reportTotalMembers')}</p>
+                    <p style="font-size:48px;font-weight:800;color:${color.text};">${regionMembers.length}</p>
+                </div>
+                <div style="flex:1;background:#f3f4f6;padding:20px;border-radius:8px;">
+                    <p style="font-size:16px;color:#4b5563;">${getTranslatedString('reportActiveStates')}</p>
+                    <p style="font-size:48px;font-weight:800;color:${color.text};">${sortedStates.length}</p>
+                </div>
+            </div>
+            <div style="display:flex;gap:40px;">
+                <div style="flex:1;"><h2 style="font-size:22px;font-weight:700;margin-bottom:15px;">${getTranslatedString('reportDistributionByState')}</h2>${sortedStates.map(([code, count]) => { const p = (count / regionMembers.length * 100).toFixed(1); return `<div style="margin-bottom:12px;"><div style="display:flex;justify-content:space-between;font-size:14px;"><span>${brazilStates[code].name}</span><strong>${count} (${p}%)</strong></div><div style="width:100%;background:#e5e7eb;height:8px;border-radius:4px;margin-top:4px;"><div style="height:8px;background:${color.bg};width:${p}%;border-radius:4px;"></div></div></div>`; }).join('')}</div>
+                <div style="flex:1;"><h2 style="font-size:22px;font-weight:700;margin-bottom:15px;">${getTranslatedString('reportMemberList')}</h2><ul style="list-style:none;padding:0;max-height:400px;overflow-y:auto;">${regionMembers.sort((a, b) => a.name.localeCompare(b.name)).map(m => `<li style="padding:8px 0;font-size:14px;border-bottom:1px solid #f3f4f6;"><strong>${m.name}</strong> - ${m.city || brazilStates[m.state].name}, ${m.state}</li>`).join('')}</ul></div>
+            </div>
+        </div>`;
+    }
+    </script>
 </body>
 </html>
