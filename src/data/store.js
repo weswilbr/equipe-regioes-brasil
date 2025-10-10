@@ -1,4 +1,4 @@
-// Localização na Estrutura: /src/data/store.js
+// Localização na Estrutura: /src/data/store.js (CORRIGIDO)
 
 import { LOCAL_STORAGE_KEY } from '../config/config.js';
 import { getTranslatedString } from '../config/i18n.js';
