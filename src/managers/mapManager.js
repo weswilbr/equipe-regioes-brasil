@@ -1,6 +1,6 @@
 // Localização na Estrutura: /src/managers/mapManager.js
 
-import { getMembers, getMemberById, getMemberIndex, deleteMember } from '../data/store.js';
+import { getMembers, getMemberById } from '../data/store.js';
 import { getTranslatedString } from '../config/i18n.js';
 import { showNotification } from '../utils/notifications.js';
 import { MAP_TYPES, BRAZIL_CENTER_COORDS, INITIAL_MAP_ZOOM, DISTRIBUTION_RADIUS, REGION_COLORS } from '../config/config.js';
@@ -13,7 +13,7 @@ import * as UIManager from './uiManager.js'; // Para interagir com modais
  */
 
 let map = null;
-let markerLayerGroup = null; // Usado para agrupar marcadores (substitui o markerClusterGroup do rascunho)
+let markerLayerGroup = null; 
 const markers = {}; // Cache de marcadores Leaflet por ID
 
 let currentMapType = 'street';
@@ -89,7 +89,6 @@ export function initMap() {
     const initialType = MAP_TYPES[currentMapType];
     L.tileLayer(initialType.url, { maxZoom: 18, attribution: initialType.attribution }).addTo(map);
 
-    // Usa um LayerGroup simples para fácil remoção/atualização de todos os marcadores
     markerLayerGroup = L.layerGroup().addTo(map);
 }
 
@@ -214,9 +213,10 @@ export function updateAllMarkersOnMap() {
             if (totalInState > 1) { 
                 const angle = (360 / totalInState) * index;
                 const radians = angle * (Math.PI / 180);
-                // Calcula as novas coordenadas no círculo
-                lat = stateData.lat + DISTRIBUTION_RADIUS * Math.cos(radians) * 0.001 * INITIAL_MAP_ZOOM; 
-                lon = stateData.lon + DISTRIBUTION_RADIUS * Math.sin(radians) * 0.001 * INITIAL_MAP_ZOOM;
+                // Calcula as novas coordenadas no círculo. Ajuste a magnitude para que a dispersão não seja muito grande.
+                const dispersalFactor = DISTRIBUTION_RADIUS * 0.001 * INITIAL_MAP_ZOOM; 
+                lat = stateData.lat + dispersalFactor * Math.cos(radians); 
+                lon = stateData.lon + dispersalFactor * Math.sin(radians);
             } else { 
                 // Apenas um membro no estado, usa a coordenada central
                 lat = stateData.lat; 
