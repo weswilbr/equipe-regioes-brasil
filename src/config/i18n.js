@@ -1,4 +1,4 @@
-// Localização na Estrutura: /src/config/i18n.js
+// Localização na Estrutura: /src/config/i18n.js (CORRIGIDO)
 
 /**
  * Módulo de Internacionalização (I18N)
@@ -18,6 +18,11 @@ const translations = {
 };
 
 let currentLanguage = 'pt';
+
+// NOVO: Função de Getter para exportar o idioma atual com segurança.
+export function getCurrentLanguage() {
+    return currentLanguage;
+}
 
 /**
  * Retorna a string traduzida para a chave e idioma atual.
