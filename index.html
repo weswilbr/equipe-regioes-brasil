@@ -326,18 +326,58 @@
         });
     }
     
+    /**
+     * Updates all markers on the map, grouping by city location
+     */
     function updateAllMarkersOnMap() {
         markerLayerGroup.clearLayers();
         Object.keys(markers).forEach(key => delete markers[key]);
-        const membersByState = members.reduce((acc, member) => { (acc[member.state] = acc[member.state] || []).push(member); return acc; }, {});
-        for (const stateCode in membersByState) {
-            const stateMembers = membersByState[stateCode]; const stateData = brazilStates[stateCode]; const totalInState = stateMembers.length;
-            stateMembers.forEach((member, index) => {
-                let lat, lon;
-                if (totalInState > 1) { const angle = (360 / totalInState) * index; const radians = angle * (Math.PI / 180); lat = stateData.lat + DISTRIBUTION_RADIUS * Math.cos(radians); lon = stateData.lon + DISTRIBUTION_RADIUS * Math.sin(radians); } else { lat = stateData.lat; lon = stateData.lon; }
-                addMarkerToMap(member, lat, lon);
+
+        // Group members by location (city coordinates)
+        const membersByLocation = {};
+
+        members.forEach(member => {
+            // For legacy members without coordinates, use state center
+            const lat = member.lat !== undefined ? member.lat : brazilStates[member.state].lat;
+            const lon = member.lon !== undefined ? member.lon : brazilStates[member.state].lon;
+
+            // Create a location key (rounded to avoid floating point issues)
+            const locationKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+
+            if (!membersByLocation[locationKey]) {
+                membersByLocation[locationKey] = {
+                    lat,
+                    lon,
+                    members: []
+                };
+            }
+
+            membersByLocation[locationKey].members.push(member);
+        });
+
+        // Distribute markers for each location
+        Object.values(membersByLocation).forEach(location => {
+            const totalAtLocation = location.members.length;
+
+            location.members.forEach((member, index) => {
+                let markerLat, markerLon;
+
+                if (totalAtLocation > 1) {
+                    // Distribute in a circle around the location
+                    const angle = (360 / totalAtLocation) * index;
+                    const radians = angle * (Math.PI / 180);
+                    const radius = DISTRIBUTION_RADIUS * 0.15; // Smaller radius for city-level distribution
+                    markerLat = location.lat + radius * Math.cos(radians);
+                    markerLon = location.lon + radius * Math.sin(radians);
+                } else {
+                    // Single member at location
+                    markerLat = location.lat;
+                    markerLon = location.lon;
+                }
+
+                addMarkerToMap(member, markerLat, markerLon);
             });
-        }
+        });
     }
 
     /**
@@ -381,10 +421,57 @@
     }
 
     /**
+     * Gets coordinates for a city using Nominatim geocoding API
+     * @param {string} city - City name
+     * @param {string} stateCode - State code (e.g., 'SP')
+     * @returns {Promise<Object>} Object with lat and lon properties
+     */
+    async function getCityCoordinates(city, stateCode) {
+        // If no city provided, use state center
+        if (!city) {
+            const state = brazilStates[stateCode];
+            return { lat: state.lat, lon: state.lon };
+        }
+
+        try {
+            const stateName = brazilStates[stateCode].name;
+            const url = `https://nominatim.openstreetmap.org/search?city=${encodeURIComponent(city)}&state=${encodeURIComponent(stateName)}&country=Brazil&format=json&limit=1`;
+
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': 'EquipeRegioesBrasil/1.0'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Geocoding failed');
+            }
+
+            const data = await response.json();
+
+            if (data.length > 0) {
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lon: parseFloat(data[0].lon)
+                };
+            } else {
+                // Fallback to state center if city not found
+                const state = brazilStates[stateCode];
+                return { lat: state.lat, lon: state.lon };
+            }
+        } catch (error) {
+            console.error('Geocoding error:', error);
+            // Fallback to state center
+            const state = brazilStates[stateCode];
+            return { lat: state.lat, lon: state.lon };
+        }
+    }
+
+    /**
      * Adds a new member to the team
      * @param {Object} data - Member data
      */
-    function addMember(data) {
+    async function addMember(data) {
         // Sanitize all input fields
         const sanitizedData = {
             name: cleanInput(data.name),
@@ -411,10 +498,19 @@
             }
         }
 
+        // Show loading notification
+        const cityName = sanitizedData.city || brazilStates[sanitizedData.state].name;
+        showNotification(`Localizando ${cityName}...`, 'info');
+
+        // Get city coordinates
+        const coords = await getCityCoordinates(sanitizedData.city, sanitizedData.state);
+
         const newMember = {
             id: Date.now().toString(),
             createdAt: new Date().toISOString(),
-            ...sanitizedData
+            ...sanitizedData,
+            lat: coords.lat,
+            lon: coords.lon
         };
 
         members.push(newMember);
@@ -424,6 +520,11 @@
         showNotification(getTranslatedString('notificationMemberAdded', { name: sanitizedData.name }), 'success');
         document.getElementById('addMemberForm').reset();
         document.getElementById('nameCharCount').textContent = '0/50';
+
+        // Reset city dropdown
+        const citySelect = document.getElementById('memberCity');
+        citySelect.innerHTML = '<option value="">Selecione um estado primeiro</option>';
+        citySelect.disabled = true;
     }
     
     /**
@@ -439,10 +540,10 @@
         const sanitizedDetails = {
             name: cleanInput(details.name),
             phone: cleanInput(details.phone),
-            city: cleanInput(details.city),
             isLeader: Boolean(details.isLeader)
         };
 
+        // Preserve existing location data (state, city, lat, lon)
         const member = { ...members[index], ...sanitizedDetails };
 
         // Validate data
