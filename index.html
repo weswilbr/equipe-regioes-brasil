@@ -136,6 +136,97 @@
     const mapTiles = { street: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png' };
     const regionColors = { 'Norte': { bg: '#10b981', text: '#065f46' }, 'Nordeste': { bg: '#f59e0b', text: '#92400e' }, 'Centro-Oeste': { bg: '#f97316', text: '#9a3412' }, 'Sudeste': { bg: '#3b82f6', text: '#1e3a8a' }, 'Sul': { bg: '#8b5cf6', text: '#5b21b6' } };
 
+    // ========================
+    // Utility Functions
+    // ========================
+
+    /**
+     * Sanitizes HTML string to prevent XSS attacks
+     * @param {string} str - The string to sanitize
+     * @returns {string} Sanitized string
+     */
+    function sanitizeHTML(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    /**
+     * Escapes HTML special characters
+     * @param {string} str - The string to escape
+     * @returns {string} Escaped string
+     */
+    function escapeHTML(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    /**
+     * Debounce function to limit execution rate
+     * @param {Function} func - Function to debounce
+     * @param {number} wait - Wait time in milliseconds
+     * @returns {Function} Debounced function
+     */
+    function debounce(func, wait = 300) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    /**
+     * Validates member data
+     * @param {Object} data - Member data to validate
+     * @returns {Object} Validation result with isValid and errors
+     */
+    function validateMemberData(data) {
+        const errors = [];
+
+        if (!data.name || data.name.trim().length === 0) {
+            errors.push('Nome é obrigatório');
+        } else if (data.name.trim().length > 50) {
+            errors.push('Nome deve ter no máximo 50 caracteres');
+        }
+
+        if (!data.state || !brazilStates[data.state]) {
+            errors.push('Estado inválido');
+        }
+
+        if (data.phone && !/^[\d\s\(\)\-\+]+$/.test(data.phone)) {
+            errors.push('Telefone contém caracteres inválidos');
+        }
+
+        if (data.city && data.city.length > 100) {
+            errors.push('Nome da cidade muito longo');
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * Safely trims and sanitizes user input
+     * @param {string} input - User input to clean
+     * @returns {string} Cleaned input
+     */
+    function cleanInput(input) {
+        if (!input) return '';
+        return sanitizeHTML(String(input).trim());
+    }
+
     function showNotification(message, type = 'success') { const bg = { success: 'linear-gradient(to right, #10b981, #059669)', error: 'linear-gradient(to right, #ef4444, #dc2626)', warning: 'linear-gradient(to right, #f59e0b, #d97706)', info: 'linear-gradient(to right, #3b82f6, #2563eb)' }; Toastify({ text: message, duration: 3000, gravity: "top", position: "right", style: { background: bg[type] || bg.info }, stopOnFocus: true }).showToast(); }
     function showConfirmModal(message, callback) { document.getElementById('confirmMessage').textContent = message; document.getElementById('confirmModal').classList.remove('hidden'); confirmCallback = callback; }
     function hideConfirmModal() { document.getElementById('confirmModal').classList.add('hidden'); confirmCallback = null; }
@@ -159,38 +250,133 @@
         }
     }
 
+    /**
+     * Adds a marker to the map for a member
+     * @param {Object} member - Member data
+     * @param {number} lat - Latitude
+     * @param {number} lon - Longitude
+     */
     function addMarkerToMap(member, lat, lon) {
         const state = brazilStates[member.state];
         const icon = createCustomIcon(member.name, state.region, member.isLeader);
         const marker = L.marker([lat, lon], { icon, zIndexOffset: member.isLeader ? 1000 : 0 });
+
+        // Sanitize all user-generated content in popup
+        const safeName = escapeHTML(member.name);
+        const safePhone = member.phone ? escapeHTML(member.phone) : '';
+        const safeCity = member.city ? escapeHTML(member.city) : state.name;
+
         const leaderBadge = member.isLeader ? `<p class="text-sm font-bold text-yellow-500">⭐ ${getTranslatedString('regionalLeaderBadge')}</p>` : '';
-        const phone = member.phone ? `<p class="text-sm">📱 ${member.phone}</p>` : '';
-        const popupContent = `<div class="p-1"><h3 class="font-bold text-lg">${member.name}</h3>${leaderBadge}${phone}<p class="text-sm">📍 ${member.city || state.name}, ${member.state}</p><div class="mt-2 flex gap-2"><button onclick="requestEditMemberFromMap('${member.id}')" class="flex-1 bg-indigo-600 text-white text-sm py-1 px-2 rounded">${getTranslatedString('editButton')}</button><button onclick="deleteMemberFromPopup('${member.id}')" class="flex-1 bg-red-600 text-white text-sm py-1 px-2 rounded">${getTranslatedString('removeButton')}</button></div></div>`;
+        const phone = safePhone ? `<p class="text-sm">📱 ${safePhone}</p>` : '';
+        const popupContent = `<div class="p-1"><h3 class="font-bold text-lg">${safeName}</h3>${leaderBadge}${phone}<p class="text-sm">📍 ${safeCity}, ${member.state}</p><div class="mt-2 flex gap-2"><button onclick="requestEditMemberFromMap('${member.id}')" class="flex-1 bg-indigo-600 text-white text-sm py-1 px-2 rounded">${getTranslatedString('editButton')}</button><button onclick="deleteMemberFromPopup('${member.id}')" class="flex-1 bg-red-600 text-white text-sm py-1 px-2 rounded">${getTranslatedString('removeButton')}</button></div></div>`;
+
         marker.bindPopup(popupContent);
-        markerLayerGroup.addLayer(marker); markers[member.id] = marker;
+        markerLayerGroup.addLayer(marker);
+        markers[member.id] = marker;
     }
 
+    /**
+     * Creates a custom map icon for a member
+     * @param {string} memberName - Name of the member
+     * @param {string} region - Region name
+     * @param {boolean} isLeader - Whether the member is a leader
+     * @returns {L.DivIcon} Leaflet div icon
+     */
     function createCustomIcon(memberName, region, isLeader = false) {
         const color = regionColors[region]?.bg || '#4F46E5';
+        const safeName = escapeHTML(memberName);
         const iconSvg = isLeader ? `<svg width="32" height="32" viewBox="0 0 24 24" fill="${color}" stroke="#fff" stroke-width="1.5" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>` : `<svg width="24" height="24" viewBox="0 0 24 24" fill="${color}" stroke="#fff" stroke-width="1.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S11.12 7 12 7s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>`;
-        const html = `<div style="text-align:center;white-space:nowrap;display:flex;flex-direction:column;align-items:center;"><div style="background-color:${color};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.3);margin-bottom:2px;">${memberName}</div>${iconSvg}</div>`;
+        const html = `<div style="text-align:center;white-space:nowrap;display:flex;flex-direction:column;align-items:center;"><div style="background-color:${color};color:white;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,0.3);margin-bottom:2px;">${safeName}</div>${iconSvg}</div>`;
         return L.divIcon({ className: 'custom-div-icon', html, iconSize: [120, isLeader ? 48 : 40], iconAnchor: [60, isLeader ? 46 : 38] });
     }
 
+    /**
+     * Adds a new member to the team
+     * @param {Object} data - Member data
+     */
     function addMember(data) {
-        if (data.isLeader) { const state = brazilStates[data.state], region = state.region; const leader = members.find(m => brazilStates[m.state]?.region === region && m.isLeader); if (leader) { showNotification(getTranslatedString('notificationRegionHasLeader', { region, leaderName: leader.name }), 'warning'); return; } }
-        const newMember = { id: Date.now().toString(), createdAt: new Date().toISOString(), ...data };
-        members.push(newMember); saveToLocalStorage(); updateAllMarkersOnMap(); updateAllUI();
-        showNotification(getTranslatedString('notificationMemberAdded', { name: data.name }), 'success');
-        document.getElementById('addMemberForm').reset(); document.getElementById('nameCharCount').textContent = '0/50';
+        // Sanitize all input fields
+        const sanitizedData = {
+            name: cleanInput(data.name),
+            phone: cleanInput(data.phone),
+            state: data.state,
+            city: cleanInput(data.city),
+            isLeader: Boolean(data.isLeader)
+        };
+
+        // Validate data
+        const validation = validateMemberData(sanitizedData);
+        if (!validation.isValid) {
+            showNotification(validation.errors.join(', '), 'error');
+            return;
+        }
+
+        if (sanitizedData.isLeader) {
+            const state = brazilStates[sanitizedData.state];
+            const region = state.region;
+            const leader = members.find(m => brazilStates[m.state]?.region === region && m.isLeader);
+            if (leader) {
+                showNotification(getTranslatedString('notificationRegionHasLeader', { region, leaderName: leader.name }), 'warning');
+                return;
+            }
+        }
+
+        const newMember = {
+            id: Date.now().toString(),
+            createdAt: new Date().toISOString(),
+            ...sanitizedData
+        };
+
+        members.push(newMember);
+        saveToLocalStorage();
+        updateAllMarkersOnMap();
+        updateAllUI();
+        showNotification(getTranslatedString('notificationMemberAdded', { name: sanitizedData.name }), 'success');
+        document.getElementById('addMemberForm').reset();
+        document.getElementById('nameCharCount').textContent = '0/50';
     }
     
+    /**
+     * Updates an existing member's details
+     * @param {string} id - Member ID
+     * @param {Object} details - Updated member data
+     */
     function updateMemberDetails(id, details) {
-        const index = members.findIndex(m => m.id === id); if (index === -1) return;
-        const member = { ...members[index], ...details };
-        if (member.isLeader) { const state = brazilStates[member.state], region = state.region; const leader = members.find(m => m.id !== id && brazilStates[m.state]?.region === region && m.isLeader); if (leader) { showNotification(getTranslatedString('notificationRegionHasLeader', { region, leaderName: leader.name }), 'warning'); return; } }
-        members[index] = member; saveToLocalStorage(); updateAllMarkersOnMap(); updateAllUI();
-        showNotification(getTranslatedString('notificationMemberUpdated', { name: details.name }), 'success');
+        const index = members.findIndex(m => m.id === id);
+        if (index === -1) return;
+
+        // Sanitize all input fields
+        const sanitizedDetails = {
+            name: cleanInput(details.name),
+            phone: cleanInput(details.phone),
+            city: cleanInput(details.city),
+            isLeader: Boolean(details.isLeader)
+        };
+
+        const member = { ...members[index], ...sanitizedDetails };
+
+        // Validate data
+        const validation = validateMemberData(member);
+        if (!validation.isValid) {
+            showNotification(validation.errors.join(', '), 'error');
+            return;
+        }
+
+        if (member.isLeader) {
+            const state = brazilStates[member.state];
+            const region = state.region;
+            const leader = members.find(m => m.id !== id && brazilStates[m.state]?.region === region && m.isLeader);
+            if (leader) {
+                showNotification(getTranslatedString('notificationRegionHasLeader', { region, leaderName: leader.name }), 'warning');
+                return;
+            }
+        }
+
+        members[index] = member;
+        saveToLocalStorage();
+        updateAllMarkersOnMap();
+        updateAllUI();
+        showNotification(getTranslatedString('notificationMemberUpdated', { name: sanitizedDetails.name }), 'success');
         hideEditModal();
     }
     
@@ -200,19 +386,44 @@
     function updateAllUI() { updateMemberList(); updateStats(); updateMemberCount(); }
     function updateMemberCount() { document.getElementById('memberCount').textContent = members.length; }
 
+    /**
+     * Updates the member list display with search filtering
+     */
     function updateMemberList() {
-        const container = document.getElementById('memberList'), emptyMsg = document.getElementById('emptyMessage');
+        const container = document.getElementById('memberList');
+        const emptyMsg = document.getElementById('emptyMessage');
         const term = document.getElementById('searchInput').value.toLowerCase();
-        const filtered = members.filter(m => m.name.toLowerCase().includes(term) || m.state.toLowerCase().includes(term) || (m.city||'').toLowerCase().includes(term) || (m.phone||'').includes(term)).sort((a,b) => a.name.localeCompare(b.name));
+
+        const filtered = members.filter(m =>
+            m.name.toLowerCase().includes(term) ||
+            m.state.toLowerCase().includes(term) ||
+            (m.city || '').toLowerCase().includes(term) ||
+            (m.phone || '').includes(term)
+        ).sort((a, b) => a.name.localeCompare(b.name));
+
         container.innerHTML = '';
-        if (filtered.length === 0) { emptyMsg.classList.remove('hidden'); return; }
+
+        if (filtered.length === 0) {
+            emptyMsg.classList.remove('hidden');
+            return;
+        }
+
         emptyMsg.classList.add('hidden');
+
         filtered.forEach(m => {
             const state = brazilStates[m.state];
-            const leaderBadge = m.isLeader ? `<span class="text-xs font-bold text-yellow-500 dark:text-yellow-400">⭐ ${getTranslatedString('regionalLeaderBadge')}</span>` : '';
+
+            // Sanitize all user-generated content
+            const safeName = escapeHTML(m.name);
+            const safePhone = m.phone ? escapeHTML(m.phone) : '-';
+            const safeCity = m.city ? escapeHTML(m.city) : state.name;
+
+            const leaderBadge = m.isLeader ?
+                `<span class="text-xs font-bold text-yellow-500 dark:text-yellow-400">⭐ ${getTranslatedString('regionalLeaderBadge')}</span>` : '';
+
             const card = document.createElement('div');
             card.className = `bg-gray-50 dark:bg-gray-700 rounded-lg p-4 card-hover transition-all ${m.isLeader ? 'border-2 border-yellow-400' : ''}`;
-            card.innerHTML = `<div class="flex justify-between items-start"><div class="flex-1"><h4 class="font-semibold text-gray-900 dark:text-white">${m.name}</h4>${leaderBadge}<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">📱 ${m.phone||'-'}</p><p class="text-sm text-gray-600 dark:text-gray-400 mt-1">📍 ${m.city||state.name}, ${m.state}</p></div><div class="flex gap-1"><button onclick="showEditMemberModal('${m.id}')" class="p-2 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-gray-600 rounded-md"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-3L20.8 7.2a2.121 2.121 0 000-3l-3-3a2.121 2.121 0 00-3 0L7 11v4h4z"></path></svg></button><button onclick="deleteMemberFromPopup('${m.id}')" class="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-gray-600 rounded-md"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>`;
+            card.innerHTML = `<div class="flex justify-between items-start"><div class="flex-1"><h4 class="font-semibold text-gray-900 dark:text-white">${safeName}</h4>${leaderBadge}<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">📱 ${safePhone}</p><p class="text-sm text-gray-600 dark:text-gray-400 mt-1">📍 ${safeCity}, ${m.state}</p></div><div class="flex gap-1"><button onclick="showEditMemberModal('${m.id}')" class="p-2 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-gray-600 rounded-md" aria-label="Edit ${safeName}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-3L20.8 7.2a2.121 2.121 0 000-3l-3-3a2.121 2.121 0 00-3 0L7 11v4h4z"></path></svg></button><button onclick="deleteMemberFromPopup('${m.id}')" class="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-gray-600 rounded-md" aria-label="Delete ${safeName}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>`;
             container.appendChild(card);
         });
     }
@@ -258,7 +469,9 @@
         document.getElementById('languageSelector').addEventListener('change', (e) => setLanguage(e.target.value));
         document.getElementById('darkModeToggle').addEventListener('click', () => { document.documentElement.classList.toggle('dark'); localStorage.setItem('darkMode', document.documentElement.classList.contains('dark')); });
         document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
-        document.getElementById('searchInput').addEventListener('input', updateMemberList);
+        // Add debounced search for better performance
+        const debouncedSearch = debounce(updateMemberList, 300);
+        document.getElementById('searchInput').addEventListener('input', debouncedSearch);
         document.getElementById('memberName').addEventListener('input', (e) => { document.getElementById('nameCharCount').textContent = `${e.target.value.length}/50`; });
         
         document.getElementById('addMemberForm').addEventListener('submit', function(e) { e.preventDefault(); addMember({ name: this.memberName.value.trim(), phone: this.memberPhone.value.trim(), state: this.memberState.value, city: this.memberCity.value.trim(), isLeader: this.memberIsLeader.checked }); });
@@ -280,6 +493,20 @@
         document.getElementById('confirmOk').addEventListener('click', (e) => { e.stopPropagation(); if (confirmCallback) confirmCallback(); hideConfirmModal(); });
         document.getElementById('confirmCancel').addEventListener('click', (e) => { e.stopPropagation(); hideConfirmModal(); });
         document.getElementById('editCancel').addEventListener('click', (e) => { e.stopPropagation(); hideEditModal(); });
+
+        // Add keyboard navigation support (ESC key closes modals)
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const confirmModal = document.getElementById('confirmModal');
+                const editModal = document.getElementById('editModal');
+
+                if (!confirmModal.classList.contains('hidden')) {
+                    hideConfirmModal();
+                } else if (!editModal.classList.contains('hidden')) {
+                    hideEditModal();
+                }
+            }
+        });
 
         if (localStorage.getItem('darkMode') === 'true') document.documentElement.classList.add('dark');
         setLanguage(userLang);
