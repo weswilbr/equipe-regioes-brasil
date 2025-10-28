@@ -74,7 +74,7 @@
                         <div><label for="memberName" class="block text-sm font-medium mb-1"><span data-key="nameLabel"></span><span class="text-red-500">*</span></label><div class="relative"><input type="text" id="memberName" required maxlength="50" class="form-input" data-key-placeholder="namePlaceholder"><div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none"><span id="nameCharCount" class="text-xs text-gray-400">0/50</span></div></div></div>
                         <div><label for="memberPhone" class="block text-sm font-medium mb-1" data-key="phoneLabel"></label><input type="tel" id="memberPhone" maxlength="20" class="form-input" data-key-placeholder="phonePlaceholder"></div>
                         <div><label for="memberState" class="block text-sm font-medium mb-1"><span data-key="stateLabel"></span><span class="text-red-500">*</span></label><select id="memberState" required class="form-select"><option value="" data-key="selectStateOption"></option></select></div>
-                        <div><label for="memberCity" class="block text-sm font-medium mb-1" data-key="cityLabel"></label><input type="text" id="memberCity" maxlength="50" class="form-input" data-key-placeholder="cityPlaceholder"></div>
+                        <div><label for="memberCity" class="block text-sm font-medium mb-1" data-key="cityLabel"></label><select id="memberCity" class="form-select" disabled><option value="">Selecione um estado primeiro</option></select></div>
                         <div class="flex items-center"><input id="memberIsLeader" type="checkbox" class="form-checkbox"><label for="memberIsLeader" class="ml-2 block text-sm text-gray-900 dark:text-gray-300" data-key="regionalLeaderLabel"></label></div>
                         <button type="submit" class="primary-btn"><svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg><span data-key="addMemberButton"></span></button>
                     </form></div>
@@ -135,6 +135,52 @@
     const brazilStates = { 'AC': { name: 'Acre', lat: -9.0238, lon: -70.812, region: 'Norte' }, 'AL': { name: 'Alagoas', lat: -9.5713, lon: -36.782, region: 'Nordeste' }, 'AP': { name: 'Amapá', lat: 1.4132, lon: -51.7661, region: 'Norte' }, 'AM': { name: 'Amazonas', lat: -3.4168, lon: -65.8561, region: 'Norte' }, 'BA': { name: 'Bahia', lat: -12.9714, lon: -38.5014, region: 'Nordeste' }, 'CE': { name: 'Ceará', lat: -3.7172, lon: -38.5431, region: 'Nordeste' }, 'DF': { name: 'Distrito Federal', lat: -15.7797, lon: -47.9297, region: 'Centro-Oeste' }, 'ES': { name: 'Espírito Santo', lat: -20.3155, lon: -40.3128, region: 'Sudeste' }, 'GO': { name: 'Goiás', lat: -16.6869, lon: -49.2648, region: 'Centro-Oeste' }, 'MA': { name: 'Maranhão', lat: -2.5387, lon: -44.2827, region: 'Nordeste' }, 'MT': { name: 'Mato Grosso', lat: -15.601, lon: -56.0979, region: 'Centro-Oeste' }, 'MS': { name: 'Mato Grosso do Sul', lat: -20.4697, lon: -54.6201, region: 'Centro-Oeste' }, 'MG': { name: 'Minas Gerais', lat: -19.9167, lon: -43.9345, region: 'Sudeste' }, 'PA': { name: 'Pará', lat: -1.4558, lon: -48.5039, region: 'Norte' }, 'PB': { name: 'Paraíba', lat: -7.1195, lon: -34.8451, region: 'Nordeste' }, 'PR': { name: 'Paraná', lat: -25.4284, lon: -49.2733, region: 'Sul' }, 'PE': { name: 'Pernambuco', lat: -8.0476, lon: -34.8771, region: 'Nordeste' }, 'PI': { name: 'Piauí', lat: -5.0919, lon: -42.8038, region: 'Nordeste' }, 'RJ': { name: 'Rio de Janeiro', lat: -22.9068, lon: -43.1729, region: 'Sudeste' }, 'RN': { name: 'Rio Grande do Norte', lat: -5.7945, lon: -35.211, region: 'Nordeste' }, 'RS': { name: 'Rio Grande do Sul', lat: -30.0346, lon: -51.2177, region: 'Sul' }, 'RO': { name: 'Rondônia', lat: -8.7619, lon: -63.9039, region: 'Norte' }, 'RR': { name: 'Roraima', lat: 2.8235, lon: -60.6758, region: 'Norte' }, 'SC': { name: 'Santa Catarina', lat: -27.5954, lon: -48.5482, region: 'Sul' }, 'SP': { name: 'São Paulo', lat: -23.5505, lon: -46.6333, region: 'Sudeste' }, 'SE': { name: 'Sergipe', lat: -10.9472, lon: -37.0731, region: 'Nordeste' }, 'TO': { name: 'Tocantins', lat: -10.1689, lon: -48.3317, region: 'Norte' }};
     const mapTiles = { street: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', terrain: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png' };
     const regionColors = { 'Norte': { bg: '#10b981', text: '#065f46' }, 'Nordeste': { bg: '#f59e0b', text: '#92400e' }, 'Centro-Oeste': { bg: '#f97316', text: '#9a3412' }, 'Sudeste': { bg: '#3b82f6', text: '#1e3a8a' }, 'Sul': { bg: '#8b5cf6', text: '#5b21b6' } };
+
+    // Simplified GeoJSON coordinates for Brazil's 5 regions (approximate boundaries)
+    const regionPolygons = {
+        'Norte': {
+            coordinates: [[
+                [-73.9, 5.3], [-60.0, 5.3], [-49.0, 1.0], [-48.0, -2.0],
+                [-50.0, -10.0], [-57.0, -13.0], [-69.0, -11.0], [-73.0, -7.0],
+                [-73.9, 5.3]
+            ]],
+            center: [-8.0, -63.0]
+        },
+        'Nordeste': {
+            coordinates: [[
+                [-48.5, -2.0], [-34.8, -2.8], [-34.8, -7.0], [-35.0, -12.0],
+                [-38.0, -16.0], [-41.0, -18.0], [-47.0, -18.0], [-50.0, -10.0],
+                [-48.5, -2.0]
+            ]],
+            center: [-9.0, -40.0]
+        },
+        'Centro-Oeste': {
+            coordinates: [[
+                [-57.5, -13.0], [-50.0, -10.0], [-47.0, -18.0], [-46.0, -24.0],
+                [-50.0, -24.0], [-54.0, -21.0], [-58.0, -20.0], [-60.0, -17.0],
+                [-57.5, -13.0]
+            ]],
+            center: [-15.0, -52.0]
+        },
+        'Sudeste': {
+            coordinates: [[
+                [-47.0, -18.0], [-41.0, -18.0], [-39.8, -21.0], [-41.0, -23.2],
+                [-44.3, -23.4], [-48.5, -25.3], [-50.0, -24.0], [-46.0, -24.0],
+                [-47.0, -18.0]
+            ]],
+            center: [-21.0, -45.0]
+        },
+        'Sul': {
+            coordinates: [[
+                [-50.0, -24.0], [-48.5, -25.3], [-48.5, -28.5], [-51.0, -30.0],
+                [-53.4, -31.5], [-54.0, -28.0], [-56.0, -27.5], [-57.6, -25.5],
+                [-54.0, -24.5], [-50.0, -24.0]
+            ]],
+            center: [-28.0, -52.0]
+        }
+    };
+
+    let regionLayers = {};
 
     // ========================
     // Utility Functions
@@ -234,7 +280,64 @@
     function saveToLocalStorage() { localStorage.setItem(localStorageKey, JSON.stringify(members)); }
     function loadFromLocalStorage() { const data = localStorage.getItem(localStorageKey); if (data) { members = JSON.parse(data); updateAllMarkersOnMap(); updateAllUI(); } }
     
-    function initMap() { map = L.map('map').setView([-15.7797, -47.9297], 5); L.tileLayer(mapTiles.street, { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map); markerLayerGroup = L.layerGroup().addTo(map); }
+    /**
+     * Initializes the Leaflet map with minimalist region polygons
+     */
+    function initMap() {
+        // Create map without tile layer for minimalist design
+        map = L.map('map', {
+            center: [-15.0, -52.0],
+            zoom: 4,
+            minZoom: 3,
+            maxZoom: 7,
+            zoomControl: true,
+            attributionControl: true
+        });
+
+        // Add background color (adapts to dark mode)
+        const isDark = document.documentElement.classList.contains('dark');
+        map.getContainer().style.backgroundColor = isDark ? '#1f2937' : '#f9fafb';
+
+        // Create marker layer group
+        markerLayerGroup = L.layerGroup().addTo(map);
+
+        // Add region polygons with colors
+        Object.entries(regionPolygons).forEach(([regionName, regionData]) => {
+            const color = regionColors[regionName].bg;
+
+            // Convert coordinates to Leaflet format [lat, lng]
+            const leafletCoords = regionData.coordinates.map(ring =>
+                ring.map(coord => [coord[1], coord[0]])
+            );
+
+            const polygon = L.polygon(leafletCoords, {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.15,
+                weight: 2,
+                opacity: 0.8
+            }).addTo(map);
+
+            // Add region label
+            const centerLatLng = [regionData.center[0], regionData.center[1]];
+            const label = L.marker(centerLatLng, {
+                icon: L.divIcon({
+                    className: 'region-label',
+                    html: `<div style="font-size: 18px; font-weight: 700; color: ${color}; text-shadow: 0 0 3px white, 0 0 3px white, 0 0 3px white; white-space: nowrap;">${regionName}</div>`,
+                    iconSize: [100, 20],
+                    iconAnchor: [50, 10]
+                }),
+                interactive: false
+            }).addTo(map);
+
+            regionLayers[regionName] = { polygon, label };
+        });
+
+        // Attribution
+        L.control.attribution({ position: 'bottomright', prefix: false })
+            .addAttribution('Regiões do Brasil')
+            .addTo(map);
+    }
     
     function updateAllMarkersOnMap() {
         markerLayerGroup.clearLayers();
@@ -436,7 +539,62 @@
         container.innerHTML = `<div class="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-lg p-4 text-white"><p class="text-sm">${getTranslatedString('reportTotalMembers')}</p><p class="text-3xl font-bold">${members.length}</p></div>` + sorted.map(([r,c]) => { const p = (c/members.length*100).toFixed(1); return `<div class="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-md"><div class="flex justify-between text-sm mb-1"><span class="text-gray-600 dark:text-gray-400">${r}</span><span class="font-semibold text-gray-900 dark:text-white">${c} (${p}%)</span></div><div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2"><div class="h-2 rounded-full" style="width:${p}%;background-color:${regionColors[r].bg};"></div></div></div>`; }).join('');
     }
     
-    function populateStatesDropdown() { const select = document.getElementById('memberState'); select.innerHTML = `<option value="">${getTranslatedString('selectStateOption')}</option>`; Object.entries(brazilStates).sort((a,b) => a[1].name.localeCompare(b[1].name)).forEach(([c,d]) => { const o = document.createElement('option'); o.value = c; o.textContent = `${d.name} (${c})`; select.appendChild(o); }); }
+    /**
+     * Populates the states dropdown
+     */
+    function populateStatesDropdown() {
+        const select = document.getElementById('memberState');
+        select.innerHTML = `<option value="">${getTranslatedString('selectStateOption')}</option>`;
+        Object.entries(brazilStates).sort((a, b) => a[1].name.localeCompare(b[1].name)).forEach(([code, data]) => {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = `${data.name} (${code})`;
+            select.appendChild(option);
+        });
+    }
+
+    /**
+     * Loads cities from IBGE API for a given state
+     * @param {string} stateCode - Two-letter state code (e.g., 'SP')
+     */
+    async function loadCitiesForState(stateCode) {
+        const citySelect = document.getElementById('memberCity');
+
+        if (!stateCode) {
+            citySelect.innerHTML = '<option value="">Selecione um estado primeiro</option>';
+            citySelect.disabled = true;
+            return;
+        }
+
+        // Show loading state
+        citySelect.innerHTML = '<option value="">Carregando cidades...</option>';
+        citySelect.disabled = true;
+
+        try {
+            const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${stateCode}/municipios`);
+
+            if (!response.ok) {
+                throw new Error('Falha ao carregar cidades');
+            }
+
+            const cities = await response.json();
+
+            // Populate cities dropdown
+            citySelect.innerHTML = '<option value="">Selecione uma cidade (opcional)</option>';
+            cities.sort((a, b) => a.nome.localeCompare(b.nome)).forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.nome;
+                option.textContent = city.nome;
+                citySelect.appendChild(option);
+            });
+
+            citySelect.disabled = false;
+        } catch (error) {
+            console.error('Error loading cities:', error);
+            citySelect.innerHTML = '<option value="">Erro ao carregar cidades</option>';
+            showNotification('Erro ao carregar cidades. Tente novamente.', 'error');
+        }
+    }
     
     window.deleteMemberFromPopup = id => { const m = members.find(m => m.id === id); if(m) showConfirmModal(getTranslatedString('confirmDelete', { memberName: m.name }), () => { deleteMember(id); map.closePopup(); }); };
     window.requestEditMemberFromMap = id => { map.closePopup(); showEditMemberModal(id); };
@@ -459,7 +617,11 @@
     }
 
     function centerMap() { map.setView([-15.7797, -47.9297], 5); showNotification(getTranslatedString('notificationMapCentered'), 'info'); }
-    function toggleMapType() { const types = Object.keys(mapTiles); currentMapType = types[(types.indexOf(currentMapType) + 1) % types.length]; map.eachLayer(l => l instanceof L.TileLayer && map.removeLayer(l)); L.tileLayer(mapTiles[currentMapType], { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map); showNotification(getTranslatedString('notificationMapTypeChanged', { type: getTranslatedString(`mapType${currentMapType.charAt(0).toUpperCase() + currentMapType.slice(1)}`) }), 'info'); }
+    // Map type toggle removed - using minimalist region-based map
+    function toggleMapType() {
+        // No-op: Map type toggle disabled for minimalist design
+        showNotification('Mapa minimalista com regiões do Brasil', 'info');
+    }
     function toggleFullscreen() { const el = document.getElementById('map').parentElement; if (!document.fullscreenElement) { el.requestFullscreen(); isFullscreen = true; } else { document.exitFullscreen(); isFullscreen = false; } showNotification(getTranslatedString('notificationFullscreen', { status: getTranslatedString(isFullscreen ? 'statusOn' : 'statusOff') }), 'info'); }
     
     document.addEventListener('DOMContentLoaded', () => {
@@ -467,14 +629,27 @@
         initMap(); loadFromLocalStorage(); switchTab('add');
         
         document.getElementById('languageSelector').addEventListener('change', (e) => setLanguage(e.target.value));
-        document.getElementById('darkModeToggle').addEventListener('click', () => { document.documentElement.classList.toggle('dark'); localStorage.setItem('darkMode', document.documentElement.classList.contains('dark')); });
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('darkMode', isDark);
+            // Update map background color
+            if (map) {
+                map.getContainer().style.backgroundColor = isDark ? '#1f2937' : '#f9fafb';
+            }
+        });
         document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
         // Add debounced search for better performance
         const debouncedSearch = debounce(updateMemberList, 300);
         document.getElementById('searchInput').addEventListener('input', debouncedSearch);
         document.getElementById('memberName').addEventListener('input', (e) => { document.getElementById('nameCharCount').textContent = `${e.target.value.length}/50`; });
-        
-        document.getElementById('addMemberForm').addEventListener('submit', function(e) { e.preventDefault(); addMember({ name: this.memberName.value.trim(), phone: this.memberPhone.value.trim(), state: this.memberState.value, city: this.memberCity.value.trim(), isLeader: this.memberIsLeader.checked }); });
+
+        // Load cities when state changes
+        document.getElementById('memberState').addEventListener('change', (e) => {
+            loadCitiesForState(e.target.value);
+        });
+
+        document.getElementById('addMemberForm').addEventListener('submit', function(e) { e.preventDefault(); addMember({ name: this.memberName.value.trim(), phone: this.memberPhone.value.trim(), state: this.memberState.value, city: this.memberCity.value, isLeader: this.memberIsLeader.checked }); });
         document.getElementById('editMemberForm').addEventListener('submit', function(e) { e.preventDefault(); updateMemberDetails(this.editMemberId.value, { name: this.editMemberName.value.trim(), phone: this.editMemberPhone.value.trim(), isLeader: this.editMemberIsLeader.checked }); });
         
         document.getElementById('importBtn').addEventListener('click', () => document.getElementById('jsonFileInput').click());
