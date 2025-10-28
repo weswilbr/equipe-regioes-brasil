@@ -181,6 +181,7 @@
     };
 
     let regionLayers = {};
+    let currentTileLayer = null;
 
     // ========================
     // Utility Functions
@@ -281,27 +282,22 @@
     function loadFromLocalStorage() { const data = localStorage.getItem(localStorageKey); if (data) { members = JSON.parse(data); updateAllMarkersOnMap(); updateAllUI(); } }
     
     /**
-     * Initializes the Leaflet map with minimalist region polygons
+     * Initializes the Leaflet map with tile layer and region boundary lines
      */
     function initMap() {
-        // Create map without tile layer for minimalist design
-        map = L.map('map', {
-            center: [-15.0, -52.0],
-            zoom: 4,
-            minZoom: 3,
-            maxZoom: 7,
-            zoomControl: true,
-            attributionControl: true
-        });
+        // Create map with normal settings
+        map = L.map('map').setView([-15.7797, -47.9297], 5);
 
-        // Add background color (adapts to dark mode)
-        const isDark = document.documentElement.classList.contains('dark');
-        map.getContainer().style.backgroundColor = isDark ? '#1f2937' : '#f9fafb';
+        // Add default tile layer (OpenStreetMap)
+        currentTileLayer = L.tileLayer(mapTiles.street, {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
         // Create marker layer group
         markerLayerGroup = L.layerGroup().addTo(map);
 
-        // Add region polygons with colors
+        // Add region boundary lines (no fill, just borders)
         Object.entries(regionPolygons).forEach(([regionName, regionData]) => {
             const color = regionColors[regionName].bg;
 
@@ -312,31 +308,22 @@
 
             const polygon = L.polygon(leafletCoords, {
                 color: color,
-                fillColor: color,
-                fillOpacity: 0.15,
-                weight: 2,
-                opacity: 0.8
+                fillColor: 'transparent',
+                fillOpacity: 0,           // No fill - only borders
+                weight: 3,                // Thicker line for visibility
+                opacity: 0.7,             // Slightly transparent
+                dashArray: '10, 5'        // Dashed line pattern
             }).addTo(map);
 
-            // Add region label
-            const centerLatLng = [regionData.center[0], regionData.center[1]];
-            const label = L.marker(centerLatLng, {
-                icon: L.divIcon({
-                    className: 'region-label',
-                    html: `<div style="font-size: 18px; font-weight: 700; color: ${color}; text-shadow: 0 0 3px white, 0 0 3px white, 0 0 3px white; white-space: nowrap;">${regionName}</div>`,
-                    iconSize: [100, 20],
-                    iconAnchor: [50, 10]
-                }),
-                interactive: false
-            }).addTo(map);
+            // Add tooltip on hover
+            polygon.bindTooltip(regionName, {
+                permanent: false,
+                direction: 'center',
+                className: 'region-tooltip'
+            });
 
-            regionLayers[regionName] = { polygon, label };
+            regionLayers[regionName] = { polygon };
         });
-
-        // Attribution
-        L.control.attribution({ position: 'bottomright', prefix: false })
-            .addAttribution('Regiões do Brasil')
-            .addTo(map);
     }
     
     function updateAllMarkersOnMap() {
@@ -617,10 +604,34 @@
     }
 
     function centerMap() { map.setView([-15.7797, -47.9297], 5); showNotification(getTranslatedString('notificationMapCentered'), 'info'); }
-    // Map type toggle removed - using minimalist region-based map
+    /**
+     * Toggles between different map types (street, satellite, terrain)
+     */
     function toggleMapType() {
-        // No-op: Map type toggle disabled for minimalist design
-        showNotification('Mapa minimalista com regiões do Brasil', 'info');
+        const types = Object.keys(mapTiles);
+        const currentIndex = types.indexOf(currentMapType);
+        currentMapType = types[(currentIndex + 1) % types.length];
+
+        // Remove current tile layer
+        if (currentTileLayer) {
+            map.removeLayer(currentTileLayer);
+        }
+
+        // Add new tile layer
+        currentTileLayer = L.tileLayer(mapTiles[currentMapType], {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // Move tile layer to back (behind region lines and markers)
+        currentTileLayer.bringToBack();
+
+        showNotification(
+            getTranslatedString('notificationMapTypeChanged', {
+                type: getTranslatedString(`mapType${currentMapType.charAt(0).toUpperCase() + currentMapType.slice(1)}`)
+            }),
+            'info'
+        );
     }
     function toggleFullscreen() { const el = document.getElementById('map').parentElement; if (!document.fullscreenElement) { el.requestFullscreen(); isFullscreen = true; } else { document.exitFullscreen(); isFullscreen = false; } showNotification(getTranslatedString('notificationFullscreen', { status: getTranslatedString(isFullscreen ? 'statusOn' : 'statusOff') }), 'info'); }
     
@@ -631,12 +642,7 @@
         document.getElementById('languageSelector').addEventListener('change', (e) => setLanguage(e.target.value));
         document.getElementById('darkModeToggle').addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
-            const isDark = document.documentElement.classList.contains('dark');
-            localStorage.setItem('darkMode', isDark);
-            // Update map background color
-            if (map) {
-                map.getContainer().style.backgroundColor = isDark ? '#1f2937' : '#f9fafb';
-            }
+            localStorage.setItem('darkMode', document.documentElement.classList.contains('dark'));
         });
         document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
         // Add debounced search for better performance
